@@ -105,7 +105,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "bm_list_1lao"
+name = "bm_list"
 version = "0.0.0"
 dependencies = [
  "futures",
@@ -117,6 +117,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]

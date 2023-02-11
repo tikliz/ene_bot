@@ -1,34 +1,124 @@
-use std::{path::PathBuf, io::Error, time::Duration};
-use irc::client::prelude::*;
 use futures::prelude::*;
+use irc::client::prelude::*;
+//use serde_json::error;
+//use tokio::time::error::Elapsed;
+use std::path::PathBuf;
+mod irccommands;
 
-#[tauri::command]
-pub async fn irc_client() -> Result<(), ()> {
+struct Handler;
+
+impl Handler {
+
+
+    
+
+    pub fn ready(sender: &Sender, target: &String, msg: &String)
+    {
+        let response: Option<String> = match msg.split_whitespace().next().unwrap()
+        {
+            "!request" => irccommands::request::run(msg),
+            "!help" => irccommands::help::run(msg),
+            _ => None,
+
+        };
+        if let Some(m) = response 
+        {
+            
+            let a = sender.send_privmsg(target, m);
+            match a {
+                Ok(()) => {},
+                Err(_) => {},
+            };
+            println!("{:#?}", a);
+
+        }
+        
+
+    }
+}
+
+
+
+#[tokio::main]
+async fn main() -> irc::error::Result<()> {
+    /*
+    let config = Config {
+        nickname: Some("pickles".to_owned()),
+        server: Some("chat.freenode.net".to_owned()),
+        channels: vec!["#rust-spam".to_owned()],
+        ..Default::default()
+    };
+    */
+
     let path = PathBuf::from("./config.toml");
-    let cfg = Config::load(path).unwrap();
-    let mut client = Client::from_config(cfg).await.unwrap();
-    client.identify().unwrap();
+    let config = match Config::load(path)
+    {
+        Ok(v) => v,
+        Err(e) => panic!("1 unwrap resulted in {}", e),
+    };
 
-    let mut stream = client.stream().unwrap();
+    
+    let mut client = match Client::from_config(config).await
+    {
+        Ok(v) => v,
+        Err(e) => panic!("2 unwrap resulted in {}", e),
+    };
+
+    match client.identify()
+    {
+        Ok(v) => v,
+        Err(e) => panic!("3 unwrap resulted in {}", e),
+    };
+    
+    let mut stream = match client.stream()
+    {
+        Ok(v) => v,
+        Err(e) => panic!("4 unwrap resulted in {}", e),
+    };
+
     let sender = client.sender();
 
-    while let Some(message) = stream.next().await.transpose().unwrap() {
-        println!("{}", message);
 
-        match message.command {
-            Command::PRIVMSG(ref target, ref msg ) => {
-                if msg.starts_with('!') {
-                    sender.send_privmsg(target, "101").unwrap();
 
-                }
+    //client.send_quit("asdsad").unwrap();
 
+    //while let Some(message) = stream.next().await.transpose()?
+    loop
+    {
+
+        let message = match stream.next().await.transpose()
+        {
+            Ok(v) => v,
+            Err(e) => panic!("5 unwrap resulted in {}", e),
+        };
+
+        
+        print!("{:#?}", message);
+
+        match message.unwrap().command {
+            Command::PRIVMSG(ref target, ref msg) => {
+                Handler::ready(&sender, target, msg);
             }
             _ => (),
+        }
+    }
 
+    print!("HAHAHAHAHAA");
+
+    /*
+    fn handle_bot_checkbox(checked: bool) {
+        if checked {
+            println!("blabla");
+            
         }
 
     }
+    */
+
+
     
-    
+
+
+
     Ok(())
 }
