@@ -1,23 +1,21 @@
 use futures::prelude::*;
-use irc::client::prelude::*;
+use irc::client::{prelude::*, ClientStream};
+use tokio::time::sleep;
 //use serde_json::error;
 //use tokio::time::error::Elapsed;
-use std::path::PathBuf;
+use std::{path::PathBuf, error::Error, time::Duration};
 mod irccommands;
 
 struct Handler;
 
 impl Handler {
-
-
-    
-
-    pub fn ready(sender: &Sender, target: &String, msg: &String)
+    pub fn ready(sender: &Sender, target: &String, msg: &String, client: &Client)
     {
         let response: Option<String> = match msg.split_whitespace().next().unwrap()
         {
             "!request" => irccommands::request::run(msg),
             "!help" => irccommands::help::run(msg),
+            "!q" => irccommands::leave::run(client),
             _ => None,
 
         };
@@ -37,73 +35,72 @@ impl Handler {
     }
 }
 
+enum ClientInfo {
+    ClientEn(Client),
 
+
+}
 
 #[tokio::main]
-async fn main() -> irc::error::Result<()> {
-    /*
-    let config = Config {
-        nickname: Some("pickles".to_owned()),
-        server: Some("chat.freenode.net".to_owned()),
-        channels: vec!["#rust-spam".to_owned()],
-        ..Default::default()
-    };
-    */
-
-    let path = PathBuf::from("./config.toml");
-    let config = match Config::load(path)
-    {
-        Ok(v) => v,
-        Err(e) => panic!("1 unwrap resulted in {}", e),
-    };
-
+async fn main() -> Result<(), Box<dyn Error>> {
     
-    let mut client = match Client::from_config(config).await
-    {
-        Ok(v) => v,
-        Err(e) => panic!("2 unwrap resulted in {}", e),
-    };
-
-    match client.identify()
-    {
-        Ok(v) => v,
-        Err(e) => panic!("3 unwrap resulted in {}", e),
-    };
     
-    let mut stream = match client.stream()
-    {
-        Ok(v) => v,
-        Err(e) => panic!("4 unwrap resulted in {}", e),
-    };
+    let mut client: Client;
+    let mut stream: ClientStream;
+    loop {
+        if let (Some(asc_client), Some(asc_stream)) = irccommands::test::connect_client().await {
+            client = asc_client;
+            stream = asc_stream;
+            break;
 
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+    }
+
+    //let mut stream = client.stream()?;
     let sender = client.sender();
 
 
+    println!("connected as: {}", client.current_nickname());
+    //println!("{:#?}", stream);
+    if stream.next().await.transpose()? == None {
+        println!("FAILED TO CONNECT.");
 
-    //client.send_quit("asdsad").unwrap();
-
-    //while let Some(message) = stream.next().await.transpose()?
-    loop
+    }
+    client.send(Command::PING("tmi.twitch.tv".into(), None)).unwrap();
+    while let Some(message) = stream.next().await.transpose()?
     {
-
-        let message = match stream.next().await.transpose()
-        {
-            Ok(v) => v,
-            Err(e) => panic!("5 unwrap resulted in {}", e),
-        };
+        // let message = match stream.next().await.transpose()
+        // {
+        //     Ok(v) => v,
+        //     Err(e) => panic!("5 unwrap resulted in {}", e),
+        // };
 
         
-        print!("{:#?}", message);
+        //print!("{:#?}", message);
 
-        match message.unwrap().command {
+        match message.command {
+            Command::PING(ref target, ref msg) => {
+                println!("PING RECEIVED I THINK");
+
+            }
+            Command::PONG(ref target, ref msg) => {
+                println!("PONG RECEIVED");
+
+            }
+            Command::NOTICE(ref target, ref msg) => {
+                println!("NOTICE RECEIVED I THINK");
+
+            }
             Command::PRIVMSG(ref target, ref msg) => {
-                Handler::ready(&sender, target, msg);
+                Handler::ready(&sender, target, msg, &client);
             }
             _ => (),
         }
     }
-
-    print!("HAHAHAHAHAA");
+    //let message = stream.next().await.transpose()?;
+    print!("done.");
 
     /*
     fn handle_bot_checkbox(checked: bool) {

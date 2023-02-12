@@ -3,7 +3,6 @@ use irc::client::prelude::*;
 use futures::prelude::*;
 use tauri::window;
 
-mod bot;
 
 #[cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
