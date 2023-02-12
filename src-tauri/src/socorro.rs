@@ -1,8 +1,6 @@
 struct Data;
 
-
-impl Data
-{
+impl Data {
     //pub foda: Vec<&str>;
-    //pub fn 
+    //pub fn
 }

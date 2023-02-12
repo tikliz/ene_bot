@@ -3,6 +3,7 @@ use irc::client::prelude::*;
 use futures::prelude::*;
 use tauri::window;
 
+pub mod bot;
 
 #[cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
@@ -19,39 +20,6 @@ fn greet(name: &str) -> String {
 
 #[tauri::command]
 async fn irc_client2() -> Result<(), ()> {
-    let path = PathBuf::from("../config.toml");
-    let cfg = Config::load(path).unwrap();
-    let mut client = Client::from_config(cfg).await.unwrap();
-    client.identify().unwrap();
-
-    let mut stream = client.stream().unwrap();
-    let sender = client.sender();
-
-    while let Some(message) = stream.next().await.transpose().unwrap() {
-        println!("{}", message);
-
-        match message.command {
-            Command::PRIVMSG(ref target, ref msg ) => {
-                if msg.starts_with('!') {
-                    sender.send_privmsg(target, "101").unwrap();
-
-                }
-
-            }
-            _ => (),
-
-        }
-        
-
-    }
-    fn handle_bot_checkbox(checked: bool) {
-        if checked {
-            println!("blabla");
-            
-        }
-
-    }
-    
     Ok(())
 }
 
