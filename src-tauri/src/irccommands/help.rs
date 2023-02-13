@@ -1,21 +1,22 @@
-#[derive(Clone)]
-pub struct Help {
-    pub command: String,
-    pub description: String,
-    pub usage: String,
-}
+use crate::bot;
 
-pub fn create(helps: Vec<Help>) -> String {
-    "WIP".to_string()
-}
+pub fn run(bot: &mut bot::Irc, handler: &Vec<bot::CommandRegister>, target: &String, msg: Option<&String>) -> Option<String> {
+{
+    // if split_msg[0].unwrap() == "!help"
+    // {
 
-pub fn run(msg: &String, help: &String) -> Option<String> {
-    let args = msg.split_whitespace().collect::<Vec<&str>>();
-    if args.len() == 1 {
-        return Some("full help message".to_string());
-    }
-    if args.len() == 2 {
-        return Some("especific help message".to_string());
-    }
-    Some("full help message com aviso de erro de argumento".to_string())
-}
+    // self.commands[1].command;
+    // self.commands[1].description;
+    // self.commands[1].usage;
+
+    // let args = msg.split_whitespace().collect::<Vec<&str>>();
+    // if args.len() == 1 {
+    //     return Some("full help message".to_string());
+    // }
+    // if args.len() == 2 {
+    //     return Some("especific help message".to_string());
+    // }
+    // Some("full help message com aviso de erro de argumento".to_string())
+
+    Some("full help message".to_string())
+}}

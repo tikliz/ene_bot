@@ -1,37 +1,45 @@
-use std::{path::PathBuf, io::Error, time::Duration};
-use irc::client::prelude::*;
-use futures::prelude::*;
-use tauri::window;
+//use serde_json::error;
+//use tokio::time::error::Elapsed;
+use std::{error::Error, path::PathBuf}; // time::Duration
+use irc::{
+    client::{prelude::*, ClientStream},
+    proto::response,
+};
 
-pub mod bot;
+mod bot;
+mod irccommands;
 
-#[cfg_attr(
-    all(not(debug_assertions), target_os = "windows"),
-    windows_subsystem = "windows"
-)]
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    // talvez passar essas coisas por variavel de ambiente e a forma mais segura de se fazer isso e amais comum de ver em codigo alheio
+    let config = Config::load(PathBuf::from("./config.toml"))
+        .expect("<fatal: config file is broken or not found>");
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    println!("Hello, {}! You've been greeted from Rust!", name);
-    format!("Hello, {}! You've been greeted from Rust!", name)
+    // se pa da pra jogar no tauri isso aqui ja
+    let mut instanciadobotircmuitofoda = bot::Irc::new(config).await;
+
     
-}
+    let mut handler_foda = bot::Handler::new([
+        bot::CommandRegister {
+            command: "!request".to_string(),
+            description: "description foda".to_string(),
+            usage: "!request [URL] [message]".to_string(),
+            run: irccommands::request::run
+        },
+        bot::CommandRegister {
+            command: "!help".to_string(),
+            description: "description".to_string(),
+            usage: "!help [command]".to_string(),
+            run: irccommands::help::run
+        },
+    ]
+    .to_vec());
+    
+    // remover await e proseguir com o codigo se nao ele so destroi a instancia do bot
+    
+    //&self, bot: &mut Irc, target: &String, msg: &String
 
-#[tauri::command]
-async fn irc_client2() -> Result<(), ()> {
+    //instanciadobotircmuitofoda.run(|&mut self, bot: &mut Irc, target: &String, msg: &String| {handler_foda.run(bot, target, msg)}).await;
+
     Ok(())
-}
-
-fn main() {
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            greet,
-            irc_client2,
-
-            ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-    
-
 }
