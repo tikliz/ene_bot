@@ -8,6 +8,7 @@ pub struct Irc {
     pub client: Client,
     pub stream: ClientStream,
     pub sender: Sender,
+    pub run_bot: bool,
 }
 impl Irc {
     pub async fn new(config: Config) -> Self {
@@ -37,54 +38,59 @@ impl Irc {
                 client: aclient,
                 stream: astream,
                 sender: asender,
+                run_bot: true,
             };
         }
     }
     
-    pub async fn run(&mut self, commandhandler: Handler) {
-        loop {
+    pub async fn run(&mut self, commandhandler: &Handler) -> bool {
+        while self.run_bot {
             let message = match self.stream.next().await.transpose() {
                 Ok(v) => v,
-                Err(e) => panic!("5 unwrap resulted in {}", e),
+                Err(e) => panic!("something went wrong with the irc stream, but i was not disconnected. error was {}", e),
             };
-            if message.is_none() {
-                println!("<info: disconnected>");
-
+            if message.is_some() {
                 // precisa inserir magia negra pra ele tentar se reconnectar sozinho
                 //self = &Irc::new(self.config).await;
 
-                continue;
+                match message.unwrap().command {
+                    Command::PING(ref _target, ref _msg) => {
+                        println!("<info: ping received>");
+                    }
+                    Command::PONG(ref _target, ref _msg) => {
+                        println!("<info: pong received>");
+                    }
+                    Command::NOTICE(ref _target, ref msg) => {
+                        println!("<info: notice received \"{}\">", msg);
+                    }
+                    Command::PRIVMSG(ref target, ref msg) => {
+                        //&self, bot: &mut Irc, target: &String, msg: String
+                        commandhandler.run(self, target, msg).await;
+                    }
+                    _ => (),
+                }
+                
+            } else {
+            println!("<info: disconnected>");
+            // não aconteceu ainda, mas quando acontecer milagrosamente reconecte pls
+            break;
+
             }
-            match message.unwrap().command {
-                Command::PING(ref _target, ref _msg) => {
-                    println!("<info: ping received>");
-                }
-                Command::PONG(ref _target, ref _msg) => {
-                    println!("<info: pong received>");
-                }
-                Command::NOTICE(ref _target, ref msg) => {
-                    println!("<info: notice received \"{}\">", msg);
-                }
-                Command::PRIVMSG(ref target, ref msg) => {
-                    //&self, bot: &mut Irc, target: &String, msg: String
-                    commandhandler.run(self, target, msg).await;
-                }
-                _ => (),
-            }
-            //if STOP ???
         }
+        println!("<info: stopped running>");
+        self.run_bot
     }
 
-    pub async fn stop(&self) {
-        // fazer uma forma de fazer o run parar
+    pub async fn stop(&mut self) {
+        self.run_bot = false;
+        self.client.send_quit("").unwrap();
+        
     }
 
-    // criar um destructor para
-    // self.client.send_quit("").unwrap();
 }
 
 pub fn str_to_option(s: &String) -> Option<&String> {
-    if s == "" {
+    if s == " " {
         return None;
     }
     Some(s)
@@ -102,6 +108,7 @@ pub struct CommandRegister {
         msg: Option<&String>,
     ) -> Option<String>,
 }
+
 pub struct Handler {
     pub commands: Vec<CommandRegister>, //run: fn(),
 }
@@ -110,15 +117,20 @@ impl Handler {
         Self { commands: commands }
     }
 
-    pub async fn run(&self, bot: &mut Irc, target: &String, msg: &String) {
+    pub async fn run(&self, bot: &mut Irc, target: &String, msg: &str) {
         let mut split_msg = msg.splitn(2, ' ').collect::<Vec<&str>>();
         if split_msg.len() < 2 {
-            split_msg.push("")
+            split_msg.push(" ")
 
         }
         
         for register in &self.commands {
             if split_msg[0] == register.command {
+                if register.command == "!q" {
+                    bot.stop().await;
+                    break;
+                }
+                
                 if let Some(response) = (register.run)(bot, &self.commands, target, str_to_option(&split_msg[1].to_string())) {
                     let send_response = bot.sender.send_privmsg(target, &response);
                     match send_response {
