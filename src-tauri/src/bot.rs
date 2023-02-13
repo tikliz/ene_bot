@@ -47,7 +47,7 @@ impl Irc {
         while self.run_bot {
             let message = match self.stream.next().await.transpose() {
                 Ok(v) => v,
-                Err(e) => panic!("something went wrong with the irc stream, but i was not disconnected. error was {}", e),
+                Err(e) => panic!("<fatal: something went wrong with the irc stream, but i was not disconnected. error was {}>", e),
             };
             if message.is_some() {
                 // precisa inserir magia negra pra ele tentar se reconnectar sozinho
@@ -71,9 +71,9 @@ impl Irc {
                 }
                 
             } else {
-            println!("<info: disconnected>");
+            panic!("<info: disconnected>");
             // não aconteceu ainda, mas quando acontecer milagrosamente reconecte pls
-            break;
+            //break;
 
             }
         }
