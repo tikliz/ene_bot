@@ -1,5 +1,5 @@
 [package]
-name = "bm_list"
+name = "ene_bot"
 version = "0.0.0"
 description = "A Tauri App"
 authors = ["you"]
