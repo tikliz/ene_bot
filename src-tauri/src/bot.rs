@@ -67,7 +67,7 @@ impl Irc {
                 }
                 Command::PRIVMSG(ref target, ref msg) => {
                     //&self, bot: &mut Irc, target: &String, msg: String
-                    commandhandler.run(self, target, msg);
+                    commandhandler.run(self, target, msg).await;
                 }
                 _ => (),
             }
@@ -111,10 +111,14 @@ impl Handler {
     }
 
     pub async fn run(&self, bot: &mut Irc, target: &String, msg: &String) {
-        let split_msg = msg.splitn(2, ' ').collect::<Vec<&str>>();
+        let mut split_msg = msg.splitn(2, ' ').collect::<Vec<&str>>();
+        if split_msg.len() < 2 {
+            split_msg.push("")
+
+        }
         
         for register in &self.commands {
-            if &split_msg[0].to_string() == &register.command {
+            if split_msg[0] == register.command {
                 if let Some(response) = (register.run)(bot, &self.commands, target, str_to_option(&split_msg[1].to_string())) {
                     let send_response = bot.sender.send_privmsg(target, &response);
                     match send_response {

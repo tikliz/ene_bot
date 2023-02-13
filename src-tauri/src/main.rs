@@ -12,7 +12,7 @@ mod irccommands;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // talvez passar essas coisas por variavel de ambiente e a forma mais segura de se fazer isso e amais comum de ver em codigo alheio
-    let config = Config::load(PathBuf::from("./config.toml"))
+    let config = Config::load(PathBuf::from("./../../config.toml"))
         .expect("<fatal: config file is broken or not found>");
 
     // se pa da pra jogar no tauri isso aqui ja
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     
     //&self, bot: &mut Irc, target: &String, msg: &String
 
-    //instanciadobotircmuitofoda.run(|&mut self, bot: &mut Irc, target: &String, msg: &String| {handler_foda.run(bot, target, msg)}).await;
+    instanciadobotircmuitofoda.run(handler_foda).await;
 
     Ok(())
 }

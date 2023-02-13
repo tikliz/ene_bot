@@ -17,6 +17,10 @@ pub fn run(bot: &mut bot::Irc, handler: &Vec<bot::CommandRegister>, target: &Str
     //     return Some("especific help message".to_string());
     // }
     // Some("full help message com aviso de erro de argumento".to_string())
+    if msg.is_some() {
+        return Some("full help message".to_string())
 
-    Some("full help message".to_string())
+    }
+    Some("general help message".to_string())
+
 }}
