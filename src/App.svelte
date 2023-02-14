@@ -1,12 +1,14 @@
 <script lang="ts">
   import BotButton from './lib/BotButton.svelte';
   import Greet from './lib/Greet.svelte'
+  import List from './lib/List.svelte';
+  
 </script>
 
 <main class="container">
-  <h1>Welcome to Tauri!</h1>
+  <!-- <h1>Welcome to Tauri!</h1> -->
 
-  <div class="row">
+  <!-- <div class="row">
     <a href="https://vitejs.dev" target="_blank">
       <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
     </a>
@@ -25,8 +27,11 @@
   <div class="row">
     <BotButton />
     
-  </div>
+  </div> -->
+  <div>
+    <List />
 
+  </div>
 
 </main>
 

@@ -5,11 +5,6 @@
 
     let yes = true;
     let test = "";
-    async function irc_client(){
-        // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-        test = await invoke("irc_client2")
-    }
-    onMount(irc_client);
 
     function handleCheckboxChange(event) {
       emit("handle_bot_checkbox", event.target.checked);

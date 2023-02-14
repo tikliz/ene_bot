@@ -10,39 +10,71 @@ pub struct Irc {
     pub sender: Sender,
     pub run_bot: bool,
 }
+
+
+
 impl Irc {
     pub async fn new(config: Config) -> Self {
-        loop {
-            println!("<info: connecting>");
-
-            // talvez fazer com reclusividade pra remover esse clone aqui
-            let mut aclient = Client::from_config(config.clone()).await.unwrap();
+        async fn test(config: Config, dur: u64) -> Option<(Client, ClientStream)>
+        {
+            println!("<info: connecting>");    
+        
+            let mut aclient = Client::from_config(config).await.unwrap();
             aclient.identify().unwrap();
 
             let mut astream = aclient.stream().unwrap();
 
             if astream.next().await.is_none() {
-                //println!("<info: connection failed>");
-                // duração tem que aumentar exponencialmente
-                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                //self = &Irc::new(self.config).await;
-                continue;
-            }
-
-            let asender = aclient.sender();
-
-            println!("<info: connected as \"{}\">", aclient.current_nickname());
-
-            return Self {
-                config: config,
-                client: aclient,
-                stream: astream,
-                sender: asender,
-                run_bot: true,
+                println!("<info: connection failed>");
+                tokio::time::sleep(tokio::time::Duration::from_secs(dur)).await;
+                return None;
             };
+            Some((aclient, astream))
         }
+        
+        let mut test_option: Option<(Client, ClientStream)>;
+        let mut dur: u64 = 1;
+        loop
+        {
+            test_option = test(config.clone(), dur).await;
+            if test_option.is_some()
+            {
+                break;
+            }
+            if dur <= 60
+            {
+                dur += dur;
+            }
+        }
+       
+        let mut aclient: Client;
+        let mut astream: ClientStream;
+        match test_option {
+            Some((client, stream)) => {aclient = client; astream = stream},
+            _ => panic!("silly mode activated")
+
+        }
+        let asender = aclient.sender();
+
+        println!("<info: connected as \"{}\">", aclient.current_nickname());
+
+        return Self {
+            config: config,
+            client: aclient,
+            stream: astream,
+            sender: asender,
+            run_bot: true,
+        };
     }
     
+    // da pra fazer ela dentro acho uhmm vdd 
+    async fn asdjhasgd()
+    {
+
+        
+    }
+
+
     pub async fn run(&mut self, commandhandler: &Handler) -> bool {
         while self.run_bot {
             let message = match self.stream.next().await.transpose() {

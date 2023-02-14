@@ -9,12 +9,14 @@ specifiers:
   svelte: ^3.54.0
   svelte-check: ^3.0.0
   svelte-preprocess: ^5.0.0
+  svelte-virtual-list: ^3.0.1
   tslib: ^2.4.1
   typescript: ^4.6.4
   vite: ^4.0.0
 
 dependencies:
   '@tauri-apps/api': 1.2.0
+  svelte-virtual-list: 3.0.1
 
 devDependencies:
   '@sveltejs/vite-plugin-svelte': 2.0.2_svelte@3.55.1+vite@4.1.1
@@ -921,6 +923,10 @@ packages:
       svelte: 3.55.1
       typescript: 4.9.5
     dev: true
+
+  /svelte-virtual-list/3.0.1:
+    resolution: {integrity: sha512-e7e+jn8VDjmdD8A1oOVBWmUi7jg+uugmiihkK0Cuk35JeeCR8ja40/B6DpCTHJFsQAZg6EVPjetN2ibgr25YCA==}
+    dev: false
 
   /svelte/3.55.1:
     resolution: {integrity: sha512-S+87/P0Ve67HxKkEV23iCdAh/SX1xiSfjF1HOglno/YTbSTW7RniICMCofWGdJJbdjw3S+0PfFb1JtGfTXE0oQ==}
