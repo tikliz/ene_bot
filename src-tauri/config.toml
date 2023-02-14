@@ -1,0 +1,5 @@
+nickname = "rheniit"
+channels = ["#rheniit"]
+server = "irc.chat.twitch.tv"
+port = 6697
+password = "oauth:u8wve6dyl112zhvfz3fzscqzcvr61h"
