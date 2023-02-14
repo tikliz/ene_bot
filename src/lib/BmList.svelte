@@ -1,19 +1,25 @@
 <script lang="ts">
+    import { listen } from "@tauri-apps/api/event";
+
     
     // invoke vai ser usado dps, qnd precisarmos acessar a lista que vai estar no back-end
     import { invoke } from "@tauri-apps/api/tauri";
     import { onMount } from "svelte";
     import VirtualList from 'svelte-virtual-list';
     
-
-    let list = ['Item 1', 'Item 2'];
-    let input = 'Silly input';
+    export let test = '';
+    let list = [];
+    let text_input = 'Silly input';
     let start;
     let end;
 
-    
 
-    function addItem() {
+    const addToList = listen(
+        'ADD_TO_LIST',
+        ({event, payload}) => addItem(payload) //console.log(payload)
+    );
+    
+    export function addItem(input) {
         list = [...list, input];
 
     }
@@ -56,11 +62,16 @@
 		border-top: 1px solid #333;
 		border-bottom: 1px solid #333;
 		min-height: 200px;
-		height: calc(90vh - 15em);
+		height: calc(80vh - 15em);
 	}
     .p_test {
         border-top: 1px solid #333;
         padding-top: 15px;
+
+    }
+    
+    .button-container {
+        padding-top: 5px;
 
     }
 
@@ -84,10 +95,10 @@
 </div>
 
 <p></p>
-<input bind:value={ input }>
+<input bind:value={ text_input }>
 <div class="button-container">
     <!-- 'symbol' and 'bgColor' are props (green{"#39c41f"})  (red{"#c51f23"}) -->
-    <button on:click={ addItem } style="background-color: #39c41f"> Add </button>
+    <button on:click={() => addItem("text_input") } style="background-color: #39c41f"> Add </button>
     <button on:click={ removeItem } style="background-color: #c51f23"> Remove </button>
 </div>
 <!-- <button on:click={ addItem }>ADD THIS TO LIST</button> -->

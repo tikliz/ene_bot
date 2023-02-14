@@ -1,5 +1,6 @@
 use futures::prelude::*;
 use irc::client::{prelude::*, ClientStream};
+use tauri::Window;
 use tokio::time::error::Elapsed;
 
 use crate::irccommands::help;
@@ -66,14 +67,6 @@ impl Irc {
             run_bot: true,
         };
     }
-    
-    // da pra fazer ela dentro acho uhmm vdd 
-    async fn asdjhasgd()
-    {
-
-        
-    }
-
 
     pub async fn run(&mut self, commandhandler: &Handler) -> bool {
         while self.run_bot {
@@ -130,6 +123,7 @@ pub fn str_to_option(s: &String) -> Option<&String> {
 
 #[derive(Clone)]
 pub struct CommandRegister {
+    pub window: Option<Window>,
     pub command: String,
     pub description: String,
     pub usage: String,
@@ -138,6 +132,7 @@ pub struct CommandRegister {
         handler: &Vec<CommandRegister>,
         target: &String,
         msg: Option<&String>,
+        window: Option<&Window>,
     ) -> Option<String>,
 }
 
@@ -163,7 +158,7 @@ impl Handler {
                     break;
                 }
                 
-                if let Some(response) = (register.run)(bot, &self.commands, target, str_to_option(&split_msg[1].to_string())) {
+                if let Some(response) = (register.run)(bot, &self.commands, target, str_to_option(&split_msg[1].to_string()), register.window.as_ref()) {
                     let send_response = bot.sender.send_privmsg(target, &response);
                     match send_response {
                         Ok(()) => {

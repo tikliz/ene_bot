@@ -1,7 +1,7 @@
 <script lang="ts">
   import BotButton from './lib/BotButton.svelte';
   import Greet from './lib/Greet.svelte'
-  import List from './lib/List.svelte';
+  import BmList from './lib/BmList.svelte';
   
 </script>
 
@@ -29,7 +29,7 @@
     
   </div> -->
   <div>
-    <List />
+    <BmList />
 
   </div>
 
