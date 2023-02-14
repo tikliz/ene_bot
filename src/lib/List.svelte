@@ -14,16 +14,12 @@
     
 
     function addItem() {
-        input = ''
-        for (let i = 0; i < 10; i++) {
-            input.concat(Math.floor(Math.random() * 11).toString());
-
-        }
         list = [...list, input];
 
     }
     function removeItem() {
-        let test = list.shift();
+        list.shift();
+        list = list;
 
     }
 
