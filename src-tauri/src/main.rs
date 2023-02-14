@@ -20,7 +20,10 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
     
 }
+}
 
+#[tauri::command]
+async fn irc_client2() -> Result<(), ()> {
 #[tauri::command]
 async fn irc_client2() -> Result<(), ()> {
     Ok(())
