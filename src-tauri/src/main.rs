@@ -20,14 +20,6 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
     
 }
-}
-
-#[tauri::command]
-async fn irc_client2() -> Result<(), ()> {
-#[tauri::command]
-async fn irc_client2() -> Result<(), ()> {
-    Ok(())
-}
 
 pub async fn send_request_tauri<R: tauri::Runtime>(msg: String, manager: &impl Manager<R>) {
     let request = "teste".to_string();
