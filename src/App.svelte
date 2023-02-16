@@ -2,6 +2,10 @@
   import BotButton from './lib/BotButton.svelte';
   import Greet from './lib/Greet.svelte'
   import BmList from './lib/BmList.svelte';
+  import TestGrid from './lib/TestGrid.svelte';
+  import DifferentGrid from './lib/DifferentGrid.svelte';
+  import DefaultGrid from './lib/DefaultGrid.svelte';
+
   
 </script>
 
@@ -29,7 +33,10 @@
     
   </div> -->
   <div>
-    <BmList />
+    <!-- <BmList /> -->
+    <!-- <DifferentGrid /> -->
+    <TestGrid />
+    <!-- <DefaultGrid /> -->
 
   </div>
 

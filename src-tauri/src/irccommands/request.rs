@@ -13,7 +13,7 @@ pub fn run(bot: &mut bot::Irc, handler: &Vec<bot::CommandRegister>, target: &Str
     // precisa dar um jeito de saber quem mandou o commando
     //bot.sender;
     
-    {
+    if msg.is_some(){
         
         let args: Vec<&str> = msg.unwrap().splitn(2, ' ').collect();
         

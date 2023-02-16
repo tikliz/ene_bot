@@ -40,7 +40,7 @@ fn main() {
             // });
             let main_window = app.get_window("main").unwrap();
             tauri::async_runtime::spawn(async move {
-                main_irc::sus_teste_async_tauri_fodase(main_window).await.unwrap();
+                // main_irc::sus_teste_async_tauri_fodase(main_window).await.unwrap();
                 
             });
             
