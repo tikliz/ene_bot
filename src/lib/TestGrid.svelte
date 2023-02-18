@@ -1,42 +1,132 @@
 <style>
+  button {
+    padding: 1%;
+    color: #fff;
+    background-color: rgb(212, 22, 60);
+    margin-bottom: 5px;
+    margin-left: 5px;
+    margin-top: 5px;
+
+  }
+
   .demo-widget {
-    background: #633838;
+    background: var(--bg, #f4f4f4);
     height: 100%;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    border: 1px solid black;
   }
   
   .demo-container {
-    max-width: 1200px;;
+    padding: auto;
+    min-width: 1300px;
+    max-width: 1920px;
+    min-height: 220px;
+    max-height: 600px;
     width: 100%;
+    border: 1px solid black;
+    overflow: scroll;
   }
   .size {
-    max-width: 1200px;
+    max-width: 1300px;
+    min-width: 1300px;
     width: 100%;
   }
 
-  .remove { 
-	  cursor: pointer;
-	  position: absolute;
-	  right: 5px; 
-	  top: 3px;
-	  user-select: none;
+  .demo-widget p {
+    user-select: none;
+
   }
+  .bd {
+    color: black;
+    text-align: center;
+    width: 100%; height: 100%;
+    background-color: lightslategray;
+    user-select: none;
+
+  }
+  .right-side  {
+    width: 15%;
+    height: 100%;
+    background: var(--bg, #f4f4f4);
+    /* line-height: 15px; */
+
+  }
+
+  .count {
+    display: flex;
+    /* position: absolute; bottom: 0; right: 0; */
+    align-items: center;
+    /* height: 75%; */
+    right: 14px;
+    justify-content: center;
+    /* left: 90%; */
+    background-color: red;
+
+  }
+  .count p {
+    /* padding-top: 125%; */
+    color: black;
+    border-bottom: 1px solid black;
+    text-align: center;
+    position: absolute;
+    bottom: 15px;
+
+  }
+
+  .remove { 
+    background-color: var(--bg, #f4f4f4);;
+    color: black;
+    /* background-color: aliceblue; */
+	  cursor: pointer;
+	  border-top: 1px solid black;
+    position: absolute;
+    top: 0;
+    right: 2px;
+
+    height: 15%;
+    width: 12%;
+	  /* right: 2%;  */
+	  /* top: 6px; */
+    /* bottom: 200px; */
+	  user-select: none;
+    /* padding-bottom: 90%; */
+  }
+  .remove p {
+    position: absolute;
+    align-items: center;
+    top: 0px;
+    right: 13.5px;
+
+  }
+
   </style>
 
   
   <button on:click={reset}>Reset</button>
-  <button on:click={localStore}>Save</button>
-  <label>
-    <input type=checkbox bind:checked={fillFree} />
-    'Fill space' is {fillFree ? 'enabled' : 'disabled'}
-  </label>
+  <button on:click={saveLocalStore}>Save</button>
+  <button on:click={saveAndAdjust}>Save safety backup</button>
+  <button on:click={loadSafety}>Load safety backup</button>
   
   <div class="demo-container size">
-    <Grid bind:items={items} rowHeight={200} let:item let:dataItem {cols} fillSpace={fillFree} on:mount={setCols} on:resize={setCols} on:pointerup={handleSync}>
-      <div class=demo-widget on:mousedown={() => findItem(dataItem) } on:mouseup={() => explodeItem(dataItem)}>{dataItem.data} - {dataItem.id} <br> {dataItem[4].x} {dataItem[4].y}</div>
+    <Grid bind:items={items} rowHeight={200} let:item let:dataItem {cols} fillSpace={true} on:mount={setCols} on:resize={setCols} on:pointerup={handleSync} let:movePointerDown>
+      <div class=demo-widget style="--bg: {dataItem.bg};" on:mousedown={() => findItem(dataItem)} on:mouseup={() => moveItem(dataItem)}>
+                                                                                                            <!-- on:mouseup={() => saveAndAdjust()} -->
+        <!-- remove self button -->
+      <div class="bd"><p>{dataItem.dataValue}</p></div>
+        <!-- <br> -->
+        <div class="right-side" on:pointerdown={movePointerDown}><span on:pointerdown={e => e.stopPropagation()} 
+          on:mousedown={() => remove(dataItem)}
+          class="remove"
+          >
+          <p>X</p>
+        </span>
+        <div class="count"><p>{items.indexOf(dataItem)}</p></div>
+      </div>
+
+      </div>
     </Grid>
   </div>
   
@@ -44,38 +134,46 @@
   import Grid from "svelte-grid";
   import gridHelp from "svelte-grid/build/helper/index.mjs";
   import {arrayMoveImmutable} from 'array-move';
-    import { onMount } from "svelte";
+  import { onMount } from "svelte";
   
-  let fillFree = true;
   let propId;
+  const COLS = 4;
   
   const id = () => "_" + Math.random().toString(36).substr(2, 9);
   
     const randomHexColorCode = () => {
-      let n = (Math.random() * 0xfffff * 1000000).toString(16);
-      return "#" + n.slice(0, 6);
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      return `rgb(${r}, ${g}, ${b})`;
     };
-    let dataName = 0;
+    let dataValue = 0;
     function generateLayout(col) {
       return new Array(20).fill(null).map(function (item, i) {
-        dataName += 1;
+        dataValue += 1;
         return {
-          4: gridHelp.item({ x: (i * 2) % col, y: Math.floor(i / 6), w: 1, h: 1, resizable: false }),
+          [COLS]: gridHelp.item({ x: (i * 2) % col, y: Math.floor(i / 6), w: 1, h: 1, resizable: false, customDragger: true, }),
           id: id(),
-          data: dataName,
+          dataValue: dataValue,
+          bg: randomHexColorCode(),
         };
       });
     }
-      let col2 = 4;
-      let col1 = col2*2;
+      let col1 = COLS*2;
       let columns = 0;
       
     let cols = [
-          [col1, col2],
+          [col1, COLS],
 
     ];
-  let layout = gridHelp.adjust(generateLayout(4), col2);
-  let item_bkp = JSON.parse(localStorage.getItem("layout-responsive-2"));
+    
+  let layout = gridHelp.adjust(generateLayout(COLS), COLS);
+  const saveLocalStore = () => {
+    if (localStorage.getItem("layout-responsive-2")) {
+      localStorage.setItem("layout-responsive-2", JSON.stringify(items));
+      item_bkp = items;
+
+    }};
   const localStore = () => {if (typeof window !== "undefined") {
     if (!localStorage.getItem("layout-responsive-2")) {
       localStorage.setItem("layout-responsive-2", JSON.stringify(layout));
@@ -85,76 +183,114 @@
       //console.log("local store: ", layout);
     }
   }};
-  localStore();
-  
-  
+  let item_bkp = JSON.parse(localStorage.getItem("layout-responsive-2"));
   const handleSync = () => {
+    //console.log("HANDLE SYNC");
     localStorage.setItem("layout-responsive-2", JSON.stringify(items));
-    //console.log("blabla", JSON.parse(localStorage.getItem("layout-responsive-2")));
+    //console.log("bkp thingie: ", JSON.parse(localStorage.getItem("layout-responsive-2")));
   };
   
   let items = layout;
 
   const setCols = (e) => (columns = e.detail.cols);
 
+  const adjustList = () => {
+    items = gridHelp.adjust(items, COLS);
+
+  }
+  const saveAndAdjust = () => {
+    if (!localStorage.getItem("backup-from-fail")) {
+      console.log("booting for first time. maybe");
+      //needs to run twice, to create and load layout.  
+      localStore(); localStore();
+      localStorage.setItem("backup-from-fail", localStorage.getItem("layout-responsive-2"));
+      
+    } else {
+      adjustList();
+      console.log("saved ACTUAL backup");
+      localStorage.setItem("backup-from-fail", JSON.stringify(items));
+
+    }
+
+  }
+  const loadSafety = () => {if (typeof window !== "undefined") {
+   if (localStorage.getItem("backup-from-fail")) {
+     console.log("loading ACTUAL backup");
+     let layout_fail_backup = JSON.parse(localStorage.getItem("backup-from-fail"));
+     items = layout_fail_backup.map((value, dataItem) => {
+       const restore = layout[dataItem][columns];
+       return {
+         ...value,
+         [columns]: restore,
+
+       };
+      
+
+   });
+   adjustList();
+
+  } else {
+    console.log("didn't find a backup.");
+    saveAndAdjust();
+
+  }
+
+}};
+
   const reset = () => {
-  items = items.map((value, dataItem) => {
+  items = item_bkp.map((value, dataItem) => {
     const restore = layout[dataItem][columns];
     return {
       ...value,
       [columns]: restore,
     };
   });
+  //this probably is not needed.
+  // adjustList();
   //console.log("reset: ", items);
 };
 
-
-let draggedItem;
-
+// talvez seja útil mais tarde
+// let draggedItem;
 function findItem(dataItem) {
-  draggedItem = dataItem.id;
-    //console.log("POG", dataItem.id);
+  //draggedItem = dataItem.id;
+  //console.log("POG", dataItem.id);
+
 }
-function explodeItem(dataItem) {
-  let test = items.findIndex((i) => i.data === dataItem.data);
-  let pos = {x: items[test][4].x, y: items[test][4].y}
-  let test2 = item_bkp.findIndex((i) => i[4].x == items[test][4].x && i[4].y == items[test][4].y);
+function moveItem(dataItem) {
+  let main_index = items.findIndex((i) => i == dataItem);
+  let bkp_index = item_bkp.findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
+  //let pos = {x: items[main_index][4].x, y: items[main_index][4].y};
   //console.log(i[4].x, dataItem[4].x);
-  //let test3 = item_bkp.findIndex((i) => item_bkp[i].x === dataItem.x);
-  if (Math.abs(test - test2) > 0) {
-    let range = Math.abs(test - test2);
-    console.log("range: ", range);
+  if (Math.abs(main_index - bkp_index) > 0) {
+    let range = Math.abs(main_index - bkp_index);
+    //console.log("range: ", range);
     for (let i = 0; i < range; i++) {
-      //console.log("changed: ", item_bkp[test-i].data, " for ", item_bkp[test2-i].data);
-      let temp_index = (test-i - test2-i);
-      console.log(temp_index);
-      items = arrayMoveImmutable(items, test-i, test2+i);
+      let index_1 = bkp_index;
+      let index_2 = main_index;
+      //console.log(index_1, index_2);
+      items = arrayMoveImmutable(items, index_1, index_2);
+      // if (range > 1) {
+      //   localStore();
+
+      // }
+      
 
     }
-    //localStore();
-
+    saveAndAdjust();
 
   }
-    //console.log("vai tomar no cu");
-
-  //item_bkp = JSON.parse(localStorage.getItem("layout-responsive-2"));
-  // for (let i = 0; i < items.length; i++) {
-  //   if (item_bkp[i][4] != items[i][4]) {
-  //     items[i] = item_bkp[i];
-
-  //   }
-  //   //console.log(item_bkp[i][4].id);
-
-  // }
-
-  console.log("main index: ", test, "bkp index: ", test2, " data main: ", items[test], " data bkp: ", item_bkp[test]);
-  // if (test === -3) {
-  //   items.splice(test, test2);
-
-  // }
-  
-  //console.log(items, item_bkp);
+  //localStore();
+  //console.log("main index: ", main_index, "bkp index: ", bkp_index, " data main: ", items[main_index], " data bkp: ", item_bkp[bkp_index]);
 
 }
-  //let items = gridHelp.adjust(generateLayout(4), col2);
+const remove = (item) => {
+  items = items.filter((value) => value.id !== item.id);
+  adjustList();
+  localStore();
+  console.log(items, layout);
+
+};
+  //let items = gridHelp.adjust(generateLayout(4), COLS);
+  loadSafety();
   </script>

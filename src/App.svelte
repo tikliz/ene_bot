@@ -1,44 +1,60 @@
 <script lang="ts">
-  import BotButton from './lib/BotButton.svelte';
-  import Greet from './lib/Greet.svelte'
-  import BmList from './lib/BmList.svelte';
-  import TestGrid from './lib/TestGrid.svelte';
-  import DifferentGrid from './lib/DifferentGrid.svelte';
-  import DefaultGrid from './lib/DefaultGrid.svelte';
+  import '@skeletonlabs/skeleton/themes/theme-crimson.css';
+  import '@skeletonlabs/skeleton/styles/all.css';
+  import './app.postcss';	
+
+  import SkeletonTest from './lib/SkeletonTest.svelte';
+
+  import { AppBar, AppRail, AppRailTile, AppShell, LightSwitch } from '@skeletonlabs/skeleton';
+  import { writable, type Writable } from 'svelte/store';
+  import { storePrefersDarkScheme, storeLightSwitch } from '@skeletonlabs/skeleton';
+    import TestGrid from './lib/TestGrid.svelte';
+  const storeValue: Writable<number> = writable(1);
 
   
 </script>
 
-<main class="container">
-  <!-- <h1>Welcome to Tauri!</h1> -->
+<main class="dark" data-theme="crimson">
+  <AppShell slotSidebarLeft="bg-surface-500/5">
+    <svelte:fragment slot="header">
+      <AppBar>
+      	<svelte:fragment slot="lead">(icon)</svelte:fragment>
+      	(title)
+      	<svelte:fragment slot="trail">(actions)</svelte:fragment>
+      </AppBar>
+				
+    </svelte:fragment>
+    <svelte:fragment slot="sidebarLeft">
+    <SkeletonTest />
 
-  <!-- <div class="row">
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
-    <a href="https://tauri.app" target="_blank">
-      <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank">
-      <img src="/svelte.svg" class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-
-  <p>
-    Click on the Tauri, Vite, and Svelte logos to learn more.
-  </p>
-
-  <div class="row">
-    <BotButton />
-    
-  </div> -->
-  <div>
-    <!-- <BmList /> -->
-    <!-- <DifferentGrid /> -->
+    </svelte:fragment>
+    <svelte:fragment slot="sidebarRight"></svelte:fragment>
+    <svelte:fragment slot="pageHeader"></svelte:fragment>
+    <slot />
+    <!-- <div class="container mx-auto p-8 space-y-8">
+      <h1>Hello Skeleton</h1>
+      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <hr />
+      <section class="card p-4">
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      </section>
+      <hr />
+      <section class="flex space-x-2">
+        <a class="btn variant-filled-primary" href="https://kit.svelte.dev/" target="_blank" rel="noreferrer">SvelteKit</a>
+        <a class="btn variant-filled-secondary" href="https://tailwindcss.com/" target="_blank" rel="noreferrer">Tailwind</a>
+        <a class="btn variant-filled-tertiary" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+      </section>
+    </div> -->
     <TestGrid />
-    <!-- <DefaultGrid /> -->
+    <svelte:fragment slot="pageFooter"></svelte:fragment>
+    <svelte:fragment slot="footer"></svelte:fragment>
+  </AppShell>
+  <!-- <div>
+    <TestGrid />
+    <SkeletonTest />
 
-  </div>
+  </div> -->
+  
 
 </main>
 
