@@ -51,5 +51,5 @@ pub async fn sus_teste_async_tauri_fodase(window: Window) -> Result<(), Box<dyn 
 
     }
 
-    return Ok(())
+    Ok(())
 }
