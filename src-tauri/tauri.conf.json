@@ -60,8 +60,8 @@
     "windows": [
       {
         "fullscreen": false,
-        "minHeight": 704,
-        "height": 704,
+        "minHeight": 740,
+        "height": 740,
         "resizable": true,
         "title": "bm_list",
         "minWidth": 1410,

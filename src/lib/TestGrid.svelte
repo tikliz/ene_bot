@@ -1,4 +1,9 @@
 <style>
+  :global(.svlt-grid-shadow) {
+    /* Back shadow */
+    background: rgb(212, 22, 60) !important;
+  }
+
   button {
     padding: 1%;
     color: #fff;
@@ -10,13 +15,17 @@
   }
 
   .demo-widget {
-    background: var(--bg, #f4f4f4);
+    /* background: var(--bg, #f4f4f4); */
+    background-color: rgb(49, 57, 65);
     height: 100%;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     border: 1px solid black;
+    border-left: 2px solid black;
+    border-right: 2px solid black;
+    /* box-shadow: 12px 12px rgba(212, 22, 60, 0.4); */
   }
   
   .demo-container {
@@ -24,7 +33,7 @@
     min-width: 1300px;
     max-width: 1920px;
     min-height: 220px;
-    max-height: 600px;
+    max-height: 620px;
     width: 100%;
     border: 1px solid black;
     overflow: scroll;
@@ -40,13 +49,58 @@
 
   }
   .bd {
-    color: black;
-    text-align: center;
+    color: white;
     width: 100%; height: 100%;
-    background-color: lightslategray;
+    /* background-color: rgb(49, 57, 65); */
     user-select: none;
 
+    justify-content: center;
+    background-color: rgba(49, 57, 65, 0.3);
+    background-image: var(--mapBg);
+    background-size: 200%;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-left: 3px solid var(--bg);
+    background-blend-mode: darken;
+
   }
+  .bd p {
+    color: white;
+    opacity: 1;
+    text-shadow: 1px 1px 2px black;
+    font-family: Arial, Helvetica, sans-serif;
+    
+  }
+  .title {
+    text-align: left;
+    position: absolute;
+    font-size: 120%;
+    top: 20px;
+    left: 10px;
+    right: 45px;
+
+  }
+  .mapper {
+    word-wrap: break-word;
+    text-align: right;
+    font-size: 70%;
+    position: absolute;
+    right: 43px;
+    left: 65px;
+    bottom: 20px;
+
+  }
+  .requester {
+    text-align: center;
+    font-size: 80%;
+    color: var(--bg, black) !important;
+    position: absolute;
+    bottom: -2px;
+    left: 8px;
+    text-shadow: none !important;
+
+  }
+
   .right-side  {
     width: 15%;
     height: 100%;
@@ -107,16 +161,20 @@
   
   <button on:click={reset}>Reset</button>
   <button on:click={saveLocalStore}>Save</button>
-  <button on:click={saveAndAdjust}>Save safety backup</button>
-  <button on:click={loadSafety}>Load safety backup</button>
+  <!-- <button on:click={saveAndAdjust}>Save safety backup</button> -->
+  <button on:click={loadSafety}>Undo reset</button>
   
   <div class="demo-container size">
     <Grid bind:items={items} rowHeight={200} let:item let:dataItem {cols} fillSpace={true} on:mount={setCols} on:resize={setCols} on:pointerup={handleSync} let:movePointerDown>
-      <div class=demo-widget style="--bg: {dataItem.bg};" on:mousedown={() => findItem(dataItem)} on:mouseup={() => moveItem(dataItem)}>
+      <div class=demo-widget style="--bg: {dataItem.bg}; --mapBg: url({dataItem.mapBg})" on:mousedown={() => findItem(dataItem)} on:mouseup={() => moveItem(dataItem)}>
                                                                                                             <!-- on:mouseup={() => saveAndAdjust()} -->
+      <div class="bd">
+        <p class="title">{dataItem.dataValue}: {dataItem.mapTitle} - {dataItem.mapArtist}</p>
+        <p class="mapper">mapeado por {dataItem.mapper}</p>
+        <p class="requester">pedido por {dataItem.requester}</p>
+      
+      </div>
         <!-- remove self button -->
-      <div class="bd"><p>{dataItem.dataValue}</p></div>
-        <!-- <br> -->
         <div class="right-side" on:pointerdown={movePointerDown}><span on:pointerdown={e => e.stopPropagation()} 
           on:mousedown={() => remove(dataItem)}
           class="remove"
@@ -156,6 +214,12 @@
           id: id(),
           dataValue: dataValue,
           bg: randomHexColorCode(),
+          mapBg: "https://assets.ppy.sh/beatmaps/1938220/covers/cover.jpg?1676657919",
+          mapTitle: "Tomoya Ohtani feat. Kellin Quinn & Tyler Smyth",
+          mapArtist: "Find Your Flame",
+          mapper: "Roberto",
+          requester: "rheniit",
+
         };
       });
     }
