@@ -77,7 +77,7 @@ impl Irc {
             if message.is_some() {
                 // precisa inserir magia negra pra ele tentar se reconnectar sozinho
                 //self = &Irc::new(self.config).await;
-
+                let msg_copy = message.clone();
                 match message.unwrap().command {
                     Command::PING(ref _target, ref _msg) => {
                         println!("<info: ping received>");
@@ -90,7 +90,12 @@ impl Irc {
                     }
                     Command::PRIVMSG(ref target, ref msg) => {
                         //&self, bot: &mut Irc, target: &String, msg: String
-                        commandhandler.run(self, target, msg).await;
+                        // sender nickname (pretty scuffed, need to fix)
+                        let mut sent_by: Option<String> = None;
+                        if let Some(nick) = msg_copy.unwrap().prefix.unwrap().to_string().split('!').next() {
+                            sent_by = Some(nick.to_string());
+                        }
+                        commandhandler.run(self, target, sent_by, msg).await;
                     }
                     _ => (),
                 }
@@ -131,6 +136,7 @@ pub struct CommandRegister {
         bot: &mut Irc,
         handler: &Vec<CommandRegister>,
         target: &String,
+        sent_by: Option<String>,
         msg: Option<&String>,
         window: Option<&Window>,
     ) -> Option<String>,
@@ -144,7 +150,7 @@ impl Handler {
         Self { commands: commands }
     }
 
-    pub async fn run(&self, bot: &mut Irc, target: &String, msg: &str) {
+    pub async fn run(&self, bot: &mut Irc, target: &String, sent_by: Option<String>, msg: &str) {
         let mut split_msg = msg.splitn(2, ' ').collect::<Vec<&str>>();
         if split_msg.len() < 2 {
             split_msg.push(" ")
@@ -158,7 +164,7 @@ impl Handler {
                     break;
                 }
                 
-                if let Some(response) = (register.run)(bot, &self.commands, target, str_to_option(&split_msg[1].to_string()), register.window.as_ref()) {
+                if let Some(response) = (register.run)(bot, &self.commands, target, sent_by, str_to_option(&split_msg[1].to_string()), register.window.as_ref()) {
                     let send_response = bot.sender.send_privmsg(target, &response);
                     match send_response {
                         Ok(()) => {
