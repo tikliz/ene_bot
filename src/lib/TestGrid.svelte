@@ -32,8 +32,8 @@
     padding: auto;
     min-width: 1300px;
     max-width: 1920px;
-    min-height: 220px;
-    max-height: 620px;
+    min-height: 620px;
+    height: max-content;
     width: 100%;
     border: 1px solid black;
     overflow: scroll;
@@ -53,7 +53,7 @@
     width: 100%; height: 100%;
     /* background-color: rgb(49, 57, 65); */
     user-select: none;
-
+    position: relative;
     justify-content: center;
     background-color: rgba(49, 57, 65, 0.3);
     background-image: var(--mapBg);
@@ -64,11 +64,17 @@
     background-blend-mode: darken;
 
   }
+  .bd a:hover{
+    padding: 1000px;
+
+  }
   .bd p {
+    position: absolute;
     color: white;
     opacity: 1;
     text-shadow: 1px 1px 2px black;
     font-family: Arial, Helvetica, sans-serif;
+    pointer-events: none;
     
   }
   .title {
@@ -77,7 +83,8 @@
     font-size: 120%;
     top: 20px;
     left: 10px;
-    right: 45px;
+    right: 2px;
+    pointer-events: none;
 
   }
   .mapper {
@@ -85,9 +92,10 @@
     text-align: right;
     font-size: 70%;
     position: absolute;
-    right: 43px;
+    right: 8px;
     left: 65px;
     bottom: 20px;
+    pointer-events: none;
 
   }
   .requester {
@@ -95,9 +103,20 @@
     font-size: 80%;
     color: var(--bg, black) !important;
     position: absolute;
-    bottom: -2px;
-    left: 8px;
+    bottom: -3px;
+    left: 12px;
     text-shadow: none !important;
+    pointer-events: none;
+
+  }
+  .bpm {
+    text-align: left;
+    position: absolute;
+    font-size: 180%;
+    left: 10px;
+    right: 2px;
+    bottom: 30px;
+    pointer-events: none;
 
   }
 
@@ -159,21 +178,25 @@
   </style>
 
   
-  <button on:click={reset}>Reset</button>
+  <button on:click={loadLocalStore}>Reset</button>
   <button on:click={saveLocalStore}>Save</button>
-  <!-- <button on:click={saveAndAdjust}>Save safety backup</button> -->
+  <!-- <button on:click={adjustAndSave}>Save safety backup</button> -->
   <button on:click={loadSafety}>Undo reset</button>
   
   <div class="demo-container size">
     <Grid bind:items={items} rowHeight={200} let:item let:dataItem {cols} fillSpace={true} on:mount={setCols} on:resize={setCols} on:pointerup={handleSync} let:movePointerDown>
       <div class=demo-widget style="--bg: {dataItem.bg}; --mapBg: url({dataItem.mapBg})" on:mousedown={() => findItem(dataItem)} on:mouseup={() => moveItem(dataItem)}>
-                                                                                                            <!-- on:mouseup={() => saveAndAdjust()} -->
-      <div class="bd">
-        <p class="title">{dataItem.dataValue}: {dataItem.mapTitle} - {dataItem.mapArtist}</p>
-        <p class="mapper">mapeado por {dataItem.mapper}</p>
-        <p class="requester">pedido por {dataItem.requester}</p>
-      
-      </div>
+                                                                                                            <!-- on:mouseup={() => adjustAndSave()} -->
+      <a class="bd" href="{dataItem.url}" target="_blank" rel="noreferrer">
+        <div class="bd">
+          <p class="title">{dataItem.dataValue}: {dataItem.mapTitle} <b>\\</b> {dataItem.mapArtist}</p>
+          <p class="mapper">mapeado por {dataItem.mapper}</p>
+          <p class="requester">pedido por {dataItem.requester}</p>
+          <p class="bpm">{dataItem.mapBpm}</p>
+        
+        </div>
+
+      </a>
         <!-- remove self button -->
         <div class="right-side" on:pointerdown={movePointerDown}><span on:pointerdown={e => e.stopPropagation()} 
           on:mousedown={() => remove(dataItem)}
@@ -192,62 +215,153 @@
   import Grid from "svelte-grid";
   import gridHelp from "svelte-grid/build/helper/index.mjs";
   import {arrayMoveImmutable} from 'array-move';
+  import { listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
+
+  // events 
+  const addToList = listen(
+        'ADD_TO_LIST',
+        ({event, payload}) =>  addItem(payload), //console.log(payload),
+    );
+  
+  // other stuff
   
   let propId;
   const COLS = 4;
   
   const id = () => "_" + Math.random().toString(36).substr(2, 9);
   
-    const randomHexColorCode = () => {
-      const r = Math.floor(Math.random() * 256);
-      const g = Math.floor(Math.random() * 256);
-      const b = Math.floor(Math.random() * 256);
-      return `rgb(${r}, ${g}, ${b})`;
+  const randomHexColorCode = () => {
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+  let dataValue = 0;
+  function addItem(payload) {
+    dataValue += 1;
+    console.log(payload);
+    let item = {
+        [COLS]: gridHelp.item({ w: 1, h: 1, resizable: false, customDragger: true, }),
+        // item id, not beatmap id
+        id: id(),
+        dataValue: dataValue,
+        bg: randomHexColorCode(),
+        url: payload.url,
+        mapBg: payload.map_bg,
+        mapTitle: payload.map_title,
+        mapArtist: payload.map_artist,
+        mapBpm: payload.map_bpm,
+        mapper: payload.mapper,
+        requester: payload.requester,
+
+      };
+
+    let findOutPosition = gridHelp.findSpace(item, items, COLS);
+    item = {
+      ...item,
+      [COLS]: {
+        ...item[COLS],
+        ...findOutPosition,
+
+      },
+      
     };
-    let dataValue = 0;
-    function generateLayout(col) {
-      return new Array(20).fill(null).map(function (item, i) {
-        dataValue += 1;
+    items = [...items, ...[item]];
+    items = gridHelp.normalize(items, COLS);
+    let json = JSON.parse(localStorage.getItem("original-order"));
+      let temp = json.map((value, dataItem) => {
+        const restore = json[dataItem][columns];
         return {
-          [COLS]: gridHelp.item({ x: (i * 2) % col, y: Math.floor(i / 6), w: 1, h: 1, resizable: false, customDragger: true, }),
-          id: id(),
-          dataValue: dataValue,
-          bg: randomHexColorCode(),
-          mapBg: "https://assets.ppy.sh/beatmaps/1938220/covers/cover.jpg?1676657919",
-          mapTitle: "Tomoya Ohtani feat. Kellin Quinn & Tyler Smyth",
-          mapArtist: "Find Your Flame",
-          mapper: "Roberto",
-          requester: "rheniit",
+          ...value,
+          [columns]: restore,
 
         };
+
       });
+      temp = [...temp, ...[item]];
+
+    adjustAndSave();
+    
+      console.log(localStorage.getItem("original-order"));
+      localStorage.setItem("original-order", JSON.stringify(temp));
+      console.log(localStorage.getItem("original-order"));
+
     }
-      let col1 = COLS*2;
-      let columns = 0;
+  
+  // generate default/saved layout when we reset things
+
+  function generateLayout(col) {
+    if (localStorage.getItem("backup-from-fail")) {
+      let json = JSON.parse(localStorage.getItem("backup-from-fail"));
+      return json.map((value, dataItem) => {
+    const restore = json[dataItem][columns];
+    return {
+      ...value,
+      [columns]: restore,
+    };
+  });
+
+    } else {
+      return new Array(1).fill(null).map(function (item, i) {
+      dataValue += 1;
+      return {
+        [COLS]: gridHelp.item({ x: (i * 2) % col, y: Math.floor(i / 6), w: 1, h: 1, resizable: false, customDragger: true, }),
+        id: id(),
+        dataValue: dataValue,
+        bg: randomHexColorCode(),
+        url: "https://example.com",
+        mapBg: "https://assets.ppy.sh/beatmaps/1938220/covers/cover.jpg?1676657919",
+        mapTitle: "Tomoya Ohtani feat. Kellin Quinn & Tyler Smyth",
+        mapArtist: "Find Your Flame",
+        mapBpm: "727",
+        mapper: "Roberto",
+        requester: "rheniit",
+
+      };
+
+    });
+
+    }
+
+  }
+    let col1 = COLS*2;
+    let columns = 0;
       
     let cols = [
-          [col1, COLS],
+      [col1, COLS],
 
     ];
     
   let layout = gridHelp.adjust(generateLayout(COLS), COLS);
   const saveLocalStore = () => {
     if (localStorage.getItem("layout-responsive-2")) {
-      localStorage.setItem("layout-responsive-2", JSON.stringify(items));
-      item_bkp = items;
+      localStorage.setItem("layout-responsive-2", JSON.stringify(layout));
 
     }};
-  const localStore = () => {if (typeof window !== "undefined") {
-    if (!localStorage.getItem("layout-responsive-2")) {
-      localStorage.setItem("layout-responsive-2", JSON.stringify(layout));
+  const loadLocalStore = () => {if (typeof window !== "undefined") {
+    if (!localStorage.getItem("original-order")) {
+      console.log("nope it doesnt")
+      localStorage.setItem("original-order", JSON.stringify(items));
     } else {
-      layout = JSON.parse(localStorage.getItem("layout-responsive-2"));
-      item_bkp = layout;
+      //layout = JSON.parse(localStorage.getItem("layout-responsive-2"));
+      let json = JSON.parse(localStorage.getItem("original-order"));
+      items = json.map((value, dataItem) => {
+       const restore = json[dataItem][columns];
+       return {
+         ...value,
+         [columns]: restore,
+
+       };
+      });
+      //items = gridHelp.normalize(items, COLS);
+      items = gridHelp.adjust(items, COLS);
+      //item_bkp = layout;
       //console.log("local store: ", layout);
     }
   }};
-  let item_bkp = JSON.parse(localStorage.getItem("layout-responsive-2"));
+
+  let item_bkp = JSON.parse(localStorage.getItem("backup-from-fail"));
   const handleSync = () => {
     //console.log("HANDLE SYNC");
     localStorage.setItem("layout-responsive-2", JSON.stringify(items));
@@ -262,12 +376,13 @@
     items = gridHelp.adjust(items, COLS);
 
   }
-  const saveAndAdjust = () => {
+  const adjustAndSave = () => {
     if (!localStorage.getItem("backup-from-fail")) {
       console.log("booting for first time. maybe");
       //needs to run twice, to create and load layout.  
-      localStore(); localStore();
-      localStorage.setItem("backup-from-fail", localStorage.getItem("layout-responsive-2"));
+      adjustList();
+      localStorage.setItem("original-order", JSON.stringify(items));
+      localStorage.setItem("backup-from-fail", JSON.stringify(items));
       
     } else {
       adjustList();
@@ -295,26 +410,26 @@
 
   } else {
     console.log("didn't find a backup.");
-    saveAndAdjust();
+    adjustAndSave();
 
   }
 
 }};
 
-  const reset = () => {
-  items = item_bkp.map((value, dataItem) => {
-    const restore = layout[dataItem][columns];
-    return {
-      ...value,
-      [columns]: restore,
-    };
-  });
+const reset = () => {
+items = item_bkp.map((value, dataItem) => {
+  const restore = layout[dataItem][columns];
+  return {
+    ...value,
+    [columns]: restore,
+  };
+});
   //this probably is not needed.
   // adjustList();
   //console.log("reset: ", items);
 };
 
-// talvez seja útil mais tarde
+// might be useful later
 // let draggedItem;
 function findItem(dataItem) {
   //draggedItem = dataItem.id;
@@ -323,7 +438,7 @@ function findItem(dataItem) {
 }
 function moveItem(dataItem) {
   let main_index = items.findIndex((i) => i == dataItem);
-  let bkp_index = item_bkp.findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
+  let bkp_index = (JSON.parse(localStorage.getItem("backup-from-fail"))).findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
   //let pos = {x: items[main_index][4].x, y: items[main_index][4].y};
   //console.log(i[4].x, dataItem[4].x);
   if (Math.abs(main_index - bkp_index) > 0) {
@@ -335,23 +450,23 @@ function moveItem(dataItem) {
       //console.log(index_1, index_2);
       items = arrayMoveImmutable(items, index_1, index_2);
       // if (range > 1) {
-      //   localStore();
+      //   loadLocalStore();
 
       // }
       
 
     }
-    saveAndAdjust();
+    adjustAndSave();
 
   }
-  //localStore();
+  //loadLocalStore();
   //console.log("main index: ", main_index, "bkp index: ", bkp_index, " data main: ", items[main_index], " data bkp: ", item_bkp[bkp_index]);
 
 }
 const remove = (item) => {
   items = items.filter((value) => value.id !== item.id);
   adjustList();
-  localStore();
+  //loadLocalStore();
   console.log(items, layout);
 
 };
