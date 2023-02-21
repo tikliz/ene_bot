@@ -181,7 +181,7 @@
   <button on:click={loadLocalStore}>Reset</button>
   <button on:click={saveLocalStore}>Save</button>
   <!-- <button on:click={adjustAndSave}>Save safety backup</button> -->
-  <button on:click={loadSafety}>Undo reset</button>
+  <button on:click={undoOne}>Undo</button>
   
   <div class="demo-container size">
     <Grid bind:items={items} rowHeight={200} let:item let:dataItem {cols} fillSpace={true} on:mount={setCols} on:resize={setCols} on:pointerup={handleSync} let:movePointerDown>
@@ -216,6 +216,7 @@
   import gridHelp from "svelte-grid/build/helper/index.mjs";
   import {arrayMoveImmutable} from 'array-move';
   import { listen } from "@tauri-apps/api/event";
+  import { ArrayWHistory } from "../undoChanges";
   import { onMount } from "svelte";
 
   // events 
@@ -238,9 +239,10 @@
     return `rgb(${r}, ${g}, ${b})`;
   };
   let dataValue = 0;
+
   function addItem(payload) {
     dataValue += 1;
-    console.log(payload);
+    // console.log(payload);
     let item = {
         [COLS]: gridHelp.item({ w: 1, h: 1, resizable: false, customDragger: true, }),
         // item id, not beatmap id
@@ -269,32 +271,27 @@
     };
     items = [...items, ...[item]];
     items = gridHelp.normalize(items, COLS);
-    let json = JSON.parse(localStorage.getItem("original-order"));
-      let temp = json.map((value, dataItem) => {
-        const restore = json[dataItem][columns];
-        return {
-          ...value,
-          [columns]: restore,
-
-        };
-
-      });
-      temp = [...temp, ...[item]];
+    let original_order = parseLocalStore();
+    let all_reqs = parseLocalReqs();
+    all_reqs = [...all_reqs, ...[item]];
+    original_order = [...original_order, ...[item]];
+    layout.push(...[item]);
 
     adjustAndSave();
     
-      console.log(localStorage.getItem("original-order"));
-      localStorage.setItem("original-order", JSON.stringify(temp));
-      console.log(localStorage.getItem("original-order"));
+    //console.log(localStorage.getItem("original-order"));
+    localStorage.setItem("original-order", JSON.stringify(original_order));
+    localStorage.setItem("local-reqs", JSON.stringify(all_reqs));
+    //console.log(localStorage.getItem("original-order"));
 
     }
   
   // generate default/saved layout when we reset things
 
   function generateLayout(col) {
-    if (localStorage.getItem("backup-from-fail")) {
-      let json = JSON.parse(localStorage.getItem("backup-from-fail"));
-      return json.map((value, dataItem) => {
+    if (localStorage.getItem("layout")) {
+    let json = JSON.parse(localStorage.getItem("layout"));
+    return json.map((value, dataItem) => {
     const restore = json[dataItem][columns];
     return {
       ...value,
@@ -333,19 +330,51 @@
 
     ];
     
-  let layout = gridHelp.adjust(generateLayout(COLS), COLS);
+  function parseLocalReqs() {
+    let json = JSON.parse(localStorage.getItem("local-reqs"));
+      return json.map((value, dataItem) => {
+        const restore = json[dataItem][columns];
+        return {
+          ...value,
+          [columns]: restore,
+
+        };
+
+      });
+
+  }
+  
+  function parseLocalStore() {
+    let json = JSON.parse(localStorage.getItem("original-order"));
+      return json.map((value, dataItem) => {
+        const restore = json[dataItem][columns];
+        return {
+          ...value,
+          [columns]: restore,
+
+        };
+
+      });
+
+  }
+  const layout = new ArrayWHistory(gridHelp.adjust(generateLayout(COLS), COLS), "undo-history");
+  
+  function backupLocalStore() {
+    
+
+  }
   const saveLocalStore = () => {
-    if (localStorage.getItem("layout-responsive-2")) {
-      localStorage.setItem("layout-responsive-2", JSON.stringify(layout));
+    if (localStorage.getItem("original-order")) {
+      localStorage.setItem("original-order", JSON.stringify(layout.toArray()));
 
     }};
   const loadLocalStore = () => {if (typeof window !== "undefined") {
     if (!localStorage.getItem("original-order")) {
-      console.log("nope it doesnt")
+      localStorage.setItem("local-reqs", JSON.stringify(items));
       localStorage.setItem("original-order", JSON.stringify(items));
     } else {
       //layout = JSON.parse(localStorage.getItem("layout-responsive-2"));
-      let json = JSON.parse(localStorage.getItem("original-order"));
+      let json = parseLocalReqs();
       items = json.map((value, dataItem) => {
        const restore = json[dataItem][columns];
        return {
@@ -361,14 +390,14 @@
     }
   }};
 
-  let item_bkp = JSON.parse(localStorage.getItem("backup-from-fail"));
+  let item_bkp = JSON.parse(localStorage.getItem("layout"));
   const handleSync = () => {
     //console.log("HANDLE SYNC");
     localStorage.setItem("layout-responsive-2", JSON.stringify(items));
     //console.log("bkp thingie: ", JSON.parse(localStorage.getItem("layout-responsive-2")));
   };
   
-  let items = layout;
+  let items = layout.toArray();
 
   const setCols = (e) => (columns = e.detail.cols);
 
@@ -377,27 +406,41 @@
 
   }
   const adjustAndSave = () => {
-    if (!localStorage.getItem("backup-from-fail")) {
+    if (!localStorage.getItem("layout")) {
       console.log("booting for first time. maybe");
-      //needs to run twice, to create and load layout.  
+      //needs to run twice, to create and load layout.
       adjustList();
       localStorage.setItem("original-order", JSON.stringify(items));
-      localStorage.setItem("backup-from-fail", JSON.stringify(items));
+      localStorage.setItem("local-reqs", JSON.stringify(items));
+      localStorage.setItem("layout", JSON.stringify(items));
       
     } else {
       adjustList();
       console.log("saved ACTUAL backup");
-      localStorage.setItem("backup-from-fail", JSON.stringify(items));
+      localStorage.setItem("layout", JSON.stringify(items));
+
+    }
+
+  }
+  
+  const undoOne = () => {
+    layout.undo();
+    items = layout.toArray();
+    gridHelp.normalize(items, COLS);
+    adjustList();
+    let original_order = parseLocalStore();
+    if (!original_order.findIndex((i) => i == items)) {
+
 
     }
 
   }
   const loadSafety = () => {if (typeof window !== "undefined") {
-   if (localStorage.getItem("backup-from-fail")) {
+   if (localStorage.getItem("layout")) {
      console.log("loading ACTUAL backup");
-     let layout_fail_backup = JSON.parse(localStorage.getItem("backup-from-fail"));
+     let layout_fail_backup = JSON.parse(localStorage.getItem("layout"));
      items = layout_fail_backup.map((value, dataItem) => {
-       const restore = layout[dataItem][columns];
+       const restore = layout.toArray()[dataItem][columns];
        return {
          ...value,
          [columns]: restore,
@@ -418,7 +461,7 @@
 
 const reset = () => {
 items = item_bkp.map((value, dataItem) => {
-  const restore = layout[dataItem][columns];
+  const restore = layout.toArray()[dataItem][columns];
   return {
     ...value,
     [columns]: restore,
@@ -438,7 +481,7 @@ function findItem(dataItem) {
 }
 function moveItem(dataItem) {
   let main_index = items.findIndex((i) => i == dataItem);
-  let bkp_index = (JSON.parse(localStorage.getItem("backup-from-fail"))).findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
+  let bkp_index = (JSON.parse(localStorage.getItem("layout"))).findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
   //let pos = {x: items[main_index][4].x, y: items[main_index][4].y};
   //console.log(i[4].x, dataItem[4].x);
   if (Math.abs(main_index - bkp_index) > 0) {
@@ -456,6 +499,7 @@ function moveItem(dataItem) {
       
 
     }
+    layout.replace(items);
     adjustAndSave();
 
   }
@@ -463,13 +507,20 @@ function moveItem(dataItem) {
   //console.log("main index: ", main_index, "bkp index: ", bkp_index, " data main: ", items[main_index], " data bkp: ", item_bkp[bkp_index]);
 
 }
-const remove = (item) => {
-  items = items.filter((value) => value.id !== item.id);
-  adjustList();
-  //loadLocalStore();
-  console.log(items, layout);
+  const remove = (item) => {
+    let original_order = parseLocalStore();
+    let index = original_order.findIndex((i) => i == item);
+    layout.splice(index);
+    original_order = original_order.filter((value) => value.id !== item.id);
+    original_order = gridHelp.adjust(original_order, COLS);
+    localStorage.setItem("original-order", JSON.stringify(original_order));
 
-};
+    items = items.filter((value) => value.id !== item.id);
+    adjustList();
+    //loadLocalStore();
+    console.log(items, layout.toArray());
+
+  };
   //let items = gridHelp.adjust(generateLayout(4), COLS);
   loadSafety();
   </script>
