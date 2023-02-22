@@ -62,11 +62,17 @@ export class ArrayWHistory<T> {
       return this.array.slice();
 
     }
+    clearHistory() {
+        console.log("UB");
+        this.history = [this.array.slice()];
+        localStorage.removeItem(this.storageKey);
+    }
   
     private saveHistory() {
       localStorage.setItem(this.storageKey, JSON.stringify(this.history));
       this.history.push(this.array.slice());
 
     }
+
   }
   

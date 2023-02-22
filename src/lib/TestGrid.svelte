@@ -185,11 +185,11 @@
   
   <div class="demo-container size">
     <Grid bind:items={items} rowHeight={200} let:item let:dataItem {cols} fillSpace={true} on:mount={setCols} on:resize={setCols} on:pointerup={handleSync} let:movePointerDown>
-      <div class=demo-widget style="--bg: {dataItem.bg}; --mapBg: url({dataItem.mapBg})" on:mousedown={() => findItem(dataItem)} on:mouseup={() => moveItem(dataItem)}>
+      <div class=demo-widget style="--bg: {dataItem.bg}; --mapBg: url({dataItem.mapBg})" on:mouseup={() => moveItem(dataItem)}>
                                                                                                             <!-- on:mouseup={() => adjustAndSave()} -->
       <a class="bd" href="{dataItem.url}" target="_blank" rel="noreferrer">
         <div class="bd">
-          <p class="title">{dataItem.dataValue}: {dataItem.mapTitle} <b>\\</b> {dataItem.mapArtist}</p>
+          <p class="title">{dataItem.mapTitle} <b>\\</b> {dataItem.mapArtist}</p>
           <p class="mapper">mapeado por {dataItem.mapper}</p>
           <p class="requester">pedido por {dataItem.requester}</p>
           <p class="bpm">{dataItem.mapBpm}</p>
@@ -211,7 +211,7 @@
     </Grid>
   </div>
   
-  <script>
+  <script lang="ts">
   import Grid from "svelte-grid";
   import gridHelp from "svelte-grid/build/helper/index.mjs";
   import {arrayMoveImmutable} from 'array-move';
@@ -238,16 +238,13 @@
     const b = Math.floor(Math.random() * 256);
     return `rgb(${r}, ${g}, ${b})`;
   };
-  let dataValue = 0;
 
   function addItem(payload) {
-    dataValue += 1;
     // console.log(payload);
     let item = {
         [COLS]: gridHelp.item({ w: 1, h: 1, resizable: false, customDragger: true, }),
         // item id, not beatmap id
         id: id(),
-        dataValue: dataValue,
         bg: randomHexColorCode(),
         url: payload.url,
         mapBg: payload.map_bg,
@@ -289,8 +286,8 @@
   // generate default/saved layout when we reset things
 
   function generateLayout(col) {
-    if (localStorage.getItem("layout")) {
-    let json = JSON.parse(localStorage.getItem("layout"));
+    if (localStorage.getItem("safety-backup")) {
+    let json = JSON.parse(localStorage.getItem("safety-backup"));
     return json.map((value, dataItem) => {
     const restore = json[dataItem][columns];
     return {
@@ -301,11 +298,9 @@
 
     } else {
       return new Array(1).fill(null).map(function (item, i) {
-      dataValue += 1;
       return {
         [COLS]: gridHelp.item({ x: (i * 2) % col, y: Math.floor(i / 6), w: 1, h: 1, resizable: false, customDragger: true, }),
         id: id(),
-        dataValue: dataValue,
         bg: randomHexColorCode(),
         url: "https://example.com",
         mapBg: "https://assets.ppy.sh/beatmaps/1938220/covers/cover.jpg?1676657919",
@@ -375,26 +370,18 @@
     } else {
       //layout = JSON.parse(localStorage.getItem("layout-responsive-2"));
       let json = parseLocalReqs();
-      items = json.map((value, dataItem) => {
-       const restore = json[dataItem][columns];
-       return {
-         ...value,
-         [columns]: restore,
-
-       };
-      });
+      items = json;
       //items = gridHelp.normalize(items, COLS);
       items = gridHelp.adjust(items, COLS);
+      layout.replace(items);
+      undoOne(); undoOne();
       //item_bkp = layout;
       //console.log("local store: ", layout);
     }
   }};
-
-  let item_bkp = JSON.parse(localStorage.getItem("layout"));
   const handleSync = () => {
-    //console.log("HANDLE SYNC");
-    localStorage.setItem("layout-responsive-2", JSON.stringify(items));
-    //console.log("bkp thingie: ", JSON.parse(localStorage.getItem("layout-responsive-2")));
+    localStorage.setItem("safety-backup", JSON.stringify(items));
+
   };
   
   let items = layout.toArray();
@@ -406,39 +393,40 @@
 
   }
   const adjustAndSave = () => {
-    if (!localStorage.getItem("layout")) {
+    if (!localStorage.getItem("safety-backup")) {
       console.log("booting for first time. maybe");
-      //needs to run twice, to create and load layout.
       adjustList();
       localStorage.setItem("original-order", JSON.stringify(items));
       localStorage.setItem("local-reqs", JSON.stringify(items));
-      localStorage.setItem("layout", JSON.stringify(items));
+      localStorage.setItem("safety-backup", JSON.stringify(items));
       
     } else {
       adjustList();
       console.log("saved ACTUAL backup");
-      localStorage.setItem("layout", JSON.stringify(items));
+      localStorage.setItem("safety-backup", JSON.stringify(items));
 
     }
 
   }
   
   const undoOne = () => {
+    let original_order = parseLocalStore();
+    let all_reqs = parseLocalReqs();
     layout.undo();
     items = layout.toArray();
     gridHelp.normalize(items, COLS);
     adjustList();
-    let original_order = parseLocalStore();
-    if (!original_order.findIndex((i) => i == items)) {
-
+    if (original_order < all_reqs) {
+      localStorage.setItem("original-order", JSON.stringify(all_reqs));
 
     }
+    
 
   }
   const loadSafety = () => {if (typeof window !== "undefined") {
-   if (localStorage.getItem("layout")) {
+   if (localStorage.getItem("safety-backup")) {
      console.log("loading ACTUAL backup");
-     let layout_fail_backup = JSON.parse(localStorage.getItem("layout"));
+     let layout_fail_backup = JSON.parse(localStorage.getItem("safety-backup"));
      items = layout_fail_backup.map((value, dataItem) => {
        const restore = layout.toArray()[dataItem][columns];
        return {
@@ -459,32 +447,38 @@
 
 }};
 
-const reset = () => {
-items = item_bkp.map((value, dataItem) => {
-  const restore = layout.toArray()[dataItem][columns];
-  return {
-    ...value,
-    [columns]: restore,
-  };
-});
-  //this probably is not needed.
-  // adjustList();
-  //console.log("reset: ", items);
-};
-
-// might be useful later
-// let draggedItem;
-function findItem(dataItem) {
-  //draggedItem = dataItem.id;
-  //console.log("POG", dataItem.id);
-
-}
 function moveItem(dataItem) {
   let main_index = items.findIndex((i) => i == dataItem);
-  let bkp_index = (JSON.parse(localStorage.getItem("layout"))).findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
+  let bkp_index = (JSON.parse(localStorage.getItem("safety-backup"))).findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
+  let all_reqs = parseLocalReqs();
+
   //let pos = {x: items[main_index][4].x, y: items[main_index][4].y};
   //console.log(i[4].x, dataItem[4].x);
   if (Math.abs(main_index - bkp_index) > 0) {
+  if (items.length > all_reqs.length) {
+    for (let i = 0; i < items.length; i++) {
+      if (all_reqs.findIndex((order) => order === items[i]) === -1) {
+        console.log("updating all reqs with: ", items[i]);
+        all_reqs = [...all_reqs, ...[items[i]]];
+        localStorage.setItem("local-reqs", JSON.stringify(all_reqs));
+
+      }}
+  } else if (items.length !== all_reqs.length) {
+    let temp;;
+    for (let i = 0; i < all_reqs.length; i++) {      
+      if (all_reqs.findIndex((order) => order === items[i]) === -1) {
+        temp = i;
+        break;
+
+      }
+      
+
+  }
+    all_reqs.splice(temp, 1);
+    localStorage.setItem("local-reqs", JSON.stringify(all_reqs));
+
+  }
+    
     let range = Math.abs(main_index - bkp_index);
     //console.log("range: ", range);
     for (let i = 0; i < range; i++) {
@@ -492,10 +486,6 @@ function moveItem(dataItem) {
       let index_2 = main_index;
       //console.log(index_1, index_2);
       items = arrayMoveImmutable(items, index_1, index_2);
-      // if (range > 1) {
-      //   loadLocalStore();
-
-      // }
       
 
     }
@@ -503,7 +493,6 @@ function moveItem(dataItem) {
     adjustAndSave();
 
   }
-  //loadLocalStore();
   //console.log("main index: ", main_index, "bkp index: ", bkp_index, " data main: ", items[main_index], " data bkp: ", item_bkp[bkp_index]);
 
 }
@@ -515,9 +504,8 @@ function moveItem(dataItem) {
     original_order = gridHelp.adjust(original_order, COLS);
     localStorage.setItem("original-order", JSON.stringify(original_order));
 
-    items = items.filter((value) => value.id !== item.id);
+    items = items.filter((value) => value !== item);
     adjustList();
-    //loadLocalStore();
     console.log(items, layout.toArray());
 
   };
