@@ -1,5 +1,5 @@
 nickname = "enebot"
-channels = ["#rheniit"]
+channels = ["#rheniit", "#heyakou"]
 
 server = "irc.chat.twitch.tv"
 port = 6697

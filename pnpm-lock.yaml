@@ -15,6 +15,7 @@ specifiers:
   svelte-check: ^3.0.0
   svelte-grid: ^5.1.1
   svelte-preprocess: ^4.10.7
+  svelte-textfit: ^1.1.4
   svelte-virtual-list: ^3.0.1
   tailwindcss: ^3.1.5
   tslib: ^2.4.1
@@ -26,6 +27,7 @@ dependencies:
   '@tauri-apps/api': 1.2.0
   array-move: 4.0.0
   svelte-grid: 5.1.1
+  svelte-textfit: 1.1.4_svelte@3.55.1
   svelte-virtual-list: 3.0.1
 
 devDependencies:
@@ -1252,6 +1254,14 @@ packages:
       svelte: 3.55.1
       typescript: 4.9.5
     dev: true
+
+  /svelte-textfit/1.1.4_svelte@3.55.1:
+    resolution: {integrity: sha512-V9M+MVtbMgVUOVL5e+aBfbu+WC9ov6gLXxHB1LRaeUXbCL6LoKEMzCPg1txG7U/1J4exG46eI8HDt3T3bwd22w==}
+    peerDependencies:
+      svelte: ^3.32.3
+    dependencies:
+      svelte: 3.55.1
+    dev: false
 
   /svelte-virtual-list/3.0.1:
     resolution: {integrity: sha512-e7e+jn8VDjmdD8A1oOVBWmUi7jg+uugmiihkK0Cuk35JeeCR8ja40/B6DpCTHJFsQAZg6EVPjetN2ibgr25YCA==}

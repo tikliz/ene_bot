@@ -4,9 +4,7 @@ use reqwest::{self, get};
 use tauri::{Window, Manager};
 use url::Url;
 use scraper::{Html, Selector};
-use crate::bot;
-use crate::irccommands::req_payload;
-
+use crate::{bot, irccommands::req_payload};
 
 
 fn is_valid_url(url_str: &str) -> bool {
@@ -53,7 +51,9 @@ async fn create_payload(url: String, sent_by: String, window: Window) {
         map_bpm: json["bpm"].to_string().replace("\"", ""),
         map_bg: json["covers"]["cover"].to_string().replace("\"", ""),
         requester: sent_by,
-        badge: "★".to_string(),
+        badge: "☆".to_string(),
+
+        
 
     };
     
@@ -80,7 +80,6 @@ pub fn run(bot: &mut bot::Irc, handler: &Vec<bot::CommandRegister>, target: &Str
         }
         if args[0].contains("https://osu.ppy.sh/beatmapsets/") {
             //window.unwrap();
-            println!("POINTS REQUEST WORKED I THINK");
             task::spawn(create_payload(args[0].to_string(), sent_by.unwrap(), window.unwrap().clone()));
 
         } else {

@@ -22,6 +22,8 @@ impl Irc {
         
             let mut aclient = Client::from_config(config).await.unwrap();
             aclient.identify().unwrap();
+            // request more info from twitch
+            aclient.send("CAP REQ :twitch.tv/tags\r\n").unwrap();
 
             let mut astream = aclient.stream().unwrap();
 
@@ -77,8 +79,8 @@ impl Irc {
             if message.is_some() {
                 // precisa inserir magia negra pra ele tentar se reconnectar sozinho
                 //self = &Irc::new(self.config).await;
-                let msg_copy = message.clone();
-                match message.unwrap().command {
+
+                match message.as_ref().unwrap().command {
                     Command::PING(ref _target, ref _msg) => {
                         println!("<info: ping received>");
                     }
@@ -92,23 +94,39 @@ impl Irc {
                         //&self, bot: &mut Irc, target: &String, msg: String
                         // sender nickname (pretty scuffed, need to fix)
                         let mut sent_by: Option<String> = None;
-                        if let Some(nick) = msg_copy.unwrap().prefix.unwrap().to_string().split('!').next() {
+                        let mut tag: Option<String> = None;
+                        // println!("test");
+                        if let Some(nick) = message.clone().unwrap().prefix.unwrap().to_string().split('!').next() {
+                            //println!("uga");
                             sent_by = Some(nick.to_string());
+                            
                         }
-                        commandhandler.run(self, target, sent_by, msg).await;
+                        if let Some(opt_tag) = message.clone().unwrap().tags {
+                            //println!("checking: {:?}", opt_tag);
+                            if opt_tag[3].1 == Some("5bb0c951-4b00-4ade-8750-7aa8d79520e9".to_string()) {
+                                tag = Some("REQ".to_string());
+                            
+                            }
+                        
+                        }
+                        
+                        commandhandler.run(self, target, tag, sent_by, msg).await;
+
                     }
                     _ => (),
                 }
                 
-            } else {
-            panic!("<info: disconnected>");
+            };
+            // else {
+            // panic!("<info: disconnected>");
             // não aconteceu ainda, mas quando acontecer milagrosamente reconecte pls
             //break;
 
-            }
+
         }
         println!("<info: stopped running>");
         self.run_bot
+
     }
 
     pub async fn stop(&mut self) {
@@ -129,13 +147,15 @@ pub fn str_to_option(s: &String) -> Option<&String> {
 #[derive(Clone)]
 pub struct CommandRegister {
     pub window: Option<Window>,
-    pub command: String,
+    pub command: Option<String>,
+    pub tag: Option<String>,
     pub description: String,
     pub usage: String,
     pub run: fn(
         bot: &mut Irc,
         handler: &Vec<CommandRegister>,
         target: &String,
+        tag: Option<String>,
         sent_by: Option<String>,
         msg: Option<&String>,
         window: Option<&Window>,
@@ -147,24 +167,55 @@ pub struct Handler {
 }
 impl Handler {
     pub fn new(commands: Vec<CommandRegister>) -> Self {
-        Self { commands: commands }
+        Self { commands }
     }
 
-    pub async fn run(&self, bot: &mut Irc, target: &String, sent_by: Option<String>, msg: &str) {
+    pub async fn run(&self, bot: &mut Irc, target: &String, tag: Option<String>, sent_by: Option<String>, msg: &str) {
         let mut split_msg = msg.splitn(2, ' ').collect::<Vec<&str>>();
         if split_msg.len() < 2 {
             split_msg.push(" ")
 
         }
+
+        
         
         for register in &self.commands {
-            if split_msg[0] == register.command {
-                if register.command == "!q" {
+            if tag.is_some() {
+                println!("TAG EXISTS");
+                // match tag.unwrap().as_str() {
+                // "REQ" => println!("REQUEST FROM CHANNEL POINTS"),
+                //     _ => println!("IDK"),
+    
+                // }
+                if register.tag == tag {
+                    if let Some(response) = (register.run)(bot, &self.commands, target, tag, sent_by, str_to_option(&split_msg[0].to_string()), register.window.as_ref()) {
+                        let send_response = bot.sender.send_privmsg(target, &response);
+                        match send_response {
+                            Ok(()) => {
+                                println!("<info: response sent \"{}\">", response);
+                            }
+                            Err(_) => {
+                                println!(
+                                    "<error: failed to send response \"{:#?}\">",
+                                    Some(send_response)
+                                );
+                            }
+                        };
+                    }
+
+                }
+                return;
+    
+            }
+            
+            if Some(split_msg[0].to_string()) == register.command {
+                if register.command == Some("!q".to_string()) {
                     bot.stop().await;
-                    break;
+                    return;
+
                 }
                 
-                if let Some(response) = (register.run)(bot, &self.commands, target, sent_by, str_to_option(&split_msg[1].to_string()), register.window.as_ref()) {
+                if let Some(response) = (register.run)(bot, &self.commands, target, tag, sent_by, str_to_option(&split_msg[1].to_string()), register.window.as_ref()) {
                     let send_response = bot.sender.send_privmsg(target, &response);
                     match send_response {
                         Ok(()) => {
@@ -178,7 +229,8 @@ impl Handler {
                         }
                     };
                 }
-                break;
+                return;
+
             }
         }
     }

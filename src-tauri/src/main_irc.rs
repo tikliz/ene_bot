@@ -1,6 +1,6 @@
 //use serde_json::error;
 //use tokio::time::error::Elapsed;
-use std::{error::Error, path::PathBuf, rc::Rc}; // time::Duration
+use std::{error::Error, path::PathBuf, rc::Rc, any::Any}; // time::Duration
 use irc::{
     client::{prelude::*, ClientStream},
     proto::response,
@@ -19,21 +19,33 @@ pub async fn sus_teste_async_tauri_fodase(window: Window) -> Result<(), Box<dyn 
     let handler_foda = bot::Handler::new([
         bot::CommandRegister {
             window: Some(window.clone()),
-            command: "!request".to_string(),
+            command: None,
+            tag: Some("REQ".to_string()),
+            description: "channel points request".to_string(),
+            usage: "[request with points] [URL] [message]".to_string(),
+            run: irccommands::request::run
+
+        },
+        bot::CommandRegister {
+            window: Some(window.clone()),
+            command: Some("!request".to_string()),
+            tag: None,
             description: "description foda".to_string(),
             usage: "!request [URL] [message]".to_string(),
-            run: irccommands::request::run
+            run: irccommands::request_normal::run
         },
         bot::CommandRegister {
             window: None,
-            command: "!help".to_string(),
+            command: Some("!help".to_string()),
+            tag: None,
             description: "description".to_string(),
             usage: "!help [command]".to_string(),
             run: irccommands::help::run
         },
         bot::CommandRegister {
             window: None,
-            command: "!q".to_string(),
+            command: Some("!q".to_string()),
+            tag: None,
             description: "i die thank you foreva".to_string(),
             usage: "!q".to_string(),
             run: irccommands::help::run,

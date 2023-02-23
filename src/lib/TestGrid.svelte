@@ -64,15 +64,11 @@
     background-blend-mode: darken;
 
   }
-  .bd a:hover{
-    padding: 1000px;
-
-  }
   .bd p {
     position: absolute;
-    color: white;
+    color: rgb(255, 255, 255);
     opacity: 1;
-    text-shadow: 1px 1px 2px black;
+    text-shadow: 1px 1px 1px black;
     font-family: Arial, Helvetica, sans-serif;
     pointer-events: none;
     
@@ -80,11 +76,15 @@
   .title {
     text-align: left;
     position: absolute;
-    font-size: 120%;
+    /* font-size: 120%; */
+    line-height: 1.2;
+    /* font-size-adjust: 50%; */
+    padding-bottom: 20px;
     top: 20px;
     left: 10px;
     right: 2px;
     pointer-events: none;
+    font-weight: bold;
 
   }
   .mapper {
@@ -92,19 +92,19 @@
     text-align: right;
     font-size: 70%;
     position: absolute;
-    right: 8px;
-    left: 65px;
-    bottom: 20px;
+    right: 10px;
+    /* left: 65px; */
+    bottom: 25px;
     pointer-events: none;
 
   }
   .requester {
-    text-align: center;
+    text-align: right;
     font-size: 80%;
     color: var(--bg, black) !important;
     position: absolute;
     bottom: -3px;
-    left: 12px;
+    right: 9px;
     text-shadow: none !important;
     pointer-events: none;
 
@@ -113,10 +113,16 @@
     text-align: left;
     position: absolute;
     font-size: 180%;
-    left: 10px;
-    right: 2px;
+    left: 30px;
+    word-spacing: -6px;
+    left: -3px;
     bottom: 30px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-right: 6px;
     pointer-events: none;
+    padding-left: 8px;
+    background-color: var(--bg, black) !important;
 
   }
 
@@ -189,10 +195,11 @@
                                                                                                             <!-- on:mouseup={() => adjustAndSave()} -->
       <a class="bd" href="{dataItem.url}" target="_blank" rel="noreferrer">
         <div class="bd">
-          <p class="title">{dataItem.mapTitle} <b>\\</b> {dataItem.mapArtist}</p>
+          <p class="title" use:textfit={{mode:"single", width: 1000, height:100,
+          forceSingleModeWidth:false}}>{dataItem.mapTitle} <b>\\</b> {dataItem.mapArtist}</p>
           <p class="mapper">mapeado por {dataItem.mapper}</p>
-          <p class="requester">pedido por {dataItem.requester}</p>
-          <p class="bpm">{dataItem.mapBpm}</p>
+          <p class="requester">{dataItem.requester}</p>
+          <p class="bpm">{dataItem.requester_badge} {dataItem.mapBpm}</p>
         
         </div>
 
@@ -217,6 +224,7 @@
   import {arrayMoveImmutable} from 'array-move';
   import { listen } from "@tauri-apps/api/event";
   import { ArrayWHistory } from "../undoChanges";
+  import { textfit } from 'svelte-textfit';
   import { onMount } from "svelte";
 
   // events 
@@ -253,6 +261,7 @@
         mapBpm: payload.map_bpm,
         mapper: payload.mapper,
         requester: payload.requester,
+        requester_badge: payload.badge,
 
       };
 
@@ -302,13 +311,14 @@
         [COLS]: gridHelp.item({ x: (i * 2) % col, y: Math.floor(i / 6), w: 1, h: 1, resizable: false, customDragger: true, }),
         id: id(),
         bg: randomHexColorCode(),
-        url: "https://example.com",
-        mapBg: "https://assets.ppy.sh/beatmaps/1938220/covers/cover.jpg?1676657919",
-        mapTitle: "Tomoya Ohtani feat. Kellin Quinn & Tyler Smyth",
-        mapArtist: "Find Your Flame",
-        mapBpm: "727",
-        mapper: "Roberto",
-        requester: "rheniit",
+        url: "https://osu.ppy.sh/beatmapsets/351630#osu/774965",
+        mapBg: "https://assets.ppy.sh/beatmaps/351630/covers/cover.jpg?1622092984",
+        mapTitle: "Remote Control",
+        mapArtist: "kradness&Reol",
+        mapBpm: "165",
+        mapper: "Taeyang",
+        requester: "rheniitassadadfgewfwe",
+        requester_badge: "★"
 
       };
 
@@ -380,6 +390,7 @@
     }
   }};
   const handleSync = () => {
+    console.log(items);
     localStorage.setItem("safety-backup", JSON.stringify(items));
 
   };
@@ -402,7 +413,6 @@
       
     } else {
       adjustList();
-      console.log("saved ACTUAL backup");
       localStorage.setItem("safety-backup", JSON.stringify(items));
 
     }
@@ -449,7 +459,7 @@
 
 function moveItem(dataItem) {
   let main_index = items.findIndex((i) => i == dataItem);
-  let bkp_index = (JSON.parse(localStorage.getItem("safety-backup"))).findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
+  let bkp_index = (JSON.parse(localStorage.getItem("original-order"))).findIndex((i) => i[COLS].x == items[main_index][COLS].x && i[COLS].y == items[main_index][COLS].y);
   let all_reqs = parseLocalReqs();
 
   //let pos = {x: items[main_index][4].x, y: items[main_index][4].y};

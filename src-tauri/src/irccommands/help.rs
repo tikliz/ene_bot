@@ -2,7 +2,7 @@ use tauri::Window;
 
 use crate::bot;
 
-pub fn run(bot: &mut bot::Irc, handler: &Vec<bot::CommandRegister>, target: &String, sent_by: Option<String>, msg: Option<&String>, window: Option<&Window>) -> Option<String> {
+pub fn run(bot: &mut bot::Irc, handler: &Vec<bot::CommandRegister>, target: &String, tag: Option<String>, sent_by: Option<String>, msg: Option<&String>, window: Option<&Window>) -> Option<String> {
 {
     // if split_msg[0].unwrap() == "!help"
     // {

@@ -6,15 +6,7 @@ export class ArrayWHistory<T> {
     constructor(initialArray: T[], storageKey: string) {
       this.array = initialArray;
       this.storageKey = storageKey;
-  
-      const historyString = localStorage.getItem(storageKey);
-      if (historyString) {
-        this.history = JSON.parse(historyString);
-        
-      } else {
-        this.history = [initialArray.slice()];
-
-      }
+      this.history = [initialArray.slice()];
 
     }
   
@@ -62,17 +54,13 @@ export class ArrayWHistory<T> {
       return this.array.slice();
 
     }
-    clearHistory() {
-        console.log("UB");
-        this.history = [this.array.slice()];
-        localStorage.removeItem(this.storageKey);
-    }
   
     private saveHistory() {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.history));
+    //   localStorage.setItem(this.storageKey, JSON.stringify(this.history));
       this.history.push(this.array.slice());
 
     }
+
 
   }
   

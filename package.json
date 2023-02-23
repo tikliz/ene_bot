@@ -15,6 +15,7 @@
     "@tauri-apps/api": "^1.2.0",
     "array-move": "^4.0.0",
     "svelte-grid": "^5.1.1",
+    "svelte-textfit": "^1.1.4",
     "svelte-virtual-list": "^3.0.1"
   },
   "devDependencies": {
@@ -22,15 +23,15 @@
     "@tauri-apps/cli": "^1.2.2",
     "@tsconfig/svelte": "^3.0.0",
     "@types/node": "^18.7.10",
+    "autoprefixer": "^10.4.7",
+    "postcss": "^8.4.14",
+    "postcss-load-config": "^4.0.1",
     "svelte": "^3.54.0",
     "svelte-check": "^3.0.0",
     "svelte-preprocess": "^4.10.7",
+    "tailwindcss": "^3.1.5",
     "tslib": "^2.4.1",
     "typescript": "^4.6.4",
-    "vite": "^4.0.0",
-    "postcss": "^8.4.14",
-    "postcss-load-config": "^4.0.1",
-    "autoprefixer": "^10.4.7",
-    "tailwindcss": "^3.1.5"
+    "vite": "^4.0.0"
   }
 }
