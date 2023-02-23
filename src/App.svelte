@@ -4,13 +4,14 @@
   import './app.postcss';	
 
   import SkeletonTest from './lib/SkeletonTest.svelte';
+  import TestGrid from './lib/TestGrid.svelte';
+  import {storeValue} from './lib/SkeletonTest.svelte';
 
   import { AppBar, AppRail, AppRailTile, AppShell, LightSwitch } from '@skeletonlabs/skeleton';
   import { writable, type Writable } from 'svelte/store';
   import { storePrefersDarkScheme, storeLightSwitch } from '@skeletonlabs/skeleton';
-    import TestGrid from './lib/TestGrid.svelte';
-  const storeValue: Writable<number> = writable(1);
 
+  let app_rail;
   
 </script>
 
@@ -25,11 +26,16 @@
 				
     </svelte:fragment>
     <svelte:fragment slot="sidebarLeft">
-    <SkeletonTest />
+    <SkeletonTest bind:this={app_rail}/>
 
     </svelte:fragment>
     <svelte:fragment slot="sidebarRight"></svelte:fragment>
     <svelte:fragment slot="pageHeader"></svelte:fragment>
+    {#if $storeValue == 1}
+      <TestGrid />
+
+    {/if}
+
     <slot />
     <!-- <div class="container mx-auto p-8 space-y-8">
       <h1>Hello Skeleton</h1>
@@ -45,7 +51,6 @@
         <a class="btn variant-filled-tertiary" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
       </section>
     </div> -->
-    <TestGrid />
     <svelte:fragment slot="pageFooter"></svelte:fragment>
     <svelte:fragment slot="footer"></svelte:fragment>
   </AppShell>

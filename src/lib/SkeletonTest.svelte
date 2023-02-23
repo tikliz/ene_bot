@@ -1,11 +1,10 @@
-<script lang="ts">
+<script lang="ts" context="module">
 	
     import { writable, type Writable } from 'svelte/store';
     import { AppRail, AppRailTile } from '@skeletonlabs/skeleton';
 		
 
-    const storeValue: Writable<number> = writable(1);
-
+    export const storeValue: Writable<number> = writable(1);
     
 </script>
 
